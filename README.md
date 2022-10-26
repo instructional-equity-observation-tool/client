@@ -4,12 +4,20 @@ Clone this repository. You will need node and npm installed globally on your mac
 
 Installation:
 
-`npm install`
+Open a terminal. Navigate to the `senior-design-project` directory, then type in the following commands to start up front end:
 
-To Start Server:
+`cd frontend`
+
+`npm install`
 
 `npm start`
 
-To Visit App:
+To start up backend server, open a new terminal and type in the following commands:
 
-`localhost:3000`
+`cd backend`
+
+`npm install`
+
+`node index.js`
+
+To visit the app, visit `http://localhost:3000` in your browser.
