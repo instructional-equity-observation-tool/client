@@ -9,6 +9,7 @@ function App(){
     const [questions, setQuestions] = useState("");
     const [numQuestions, setNumQuestions] = useState("");
     const [isSelected, setIsSelected] = useState(false);
+    const [isDisabled, setIsDisabled] = useState(false);
     const endpoint = "http://localhost:5000/upload";
 
 
@@ -18,6 +19,10 @@ function App(){
     };
 
     var handleSubmission = () => {
+        if (isDisabled) {
+            return;
+        }
+        setIsDisabled(true);
         const data = new FormData();
         data.append('file', selectedFile);
         axios.post(endpoint, data)
@@ -36,6 +41,7 @@ function App(){
             transcript += " " + sentences[i].text;
         }
         setTranscript(transcript);
+        setIsDisabled(false);
         return transcript;
     }
 
@@ -127,7 +133,7 @@ function App(){
                         <p>Select a file to show details</p>
                     )}
                     <div>
-                        <button type="button" className="btn btn-primary" onClick={handleSubmission}>Submit</button>
+                        <button type="button" className="btn btn-primary" disabled={isDisabled} onClick={handleSubmission}>Submit</button>
                     </div>
                     {sentences ? (
                             <div>
