@@ -48,23 +48,24 @@ app.post('/upload', function(req, res) {
 
     assembly.post("/upload", data)
       .then((response) => {
-        console.log('response: ', response);
-        assembly
-          .post("/transcript", {
-              audio_url: response.data.upload_url
+        console.log('RESPONSE: ', response);
+        assembly.post("/transcript", {
+              audio_url: response.data.upload_url,
+              speaker_labels: true
           })
       .then((response) => {
         // Interval for checking transcript completion
         const checkCompletionInterval = setInterval(async () => {
           const transcript = await assembly.get(`/transcript/${response.data.id}`);
           const transcriptStatus = transcript.data.status;
-
+          
           if (transcriptStatus !== "completed") {
             console.log(`Transcript Status: ${transcriptStatus}`);
           } else if (transcriptStatus === "completed") {
             console.log(`Transcript Status: ${transcriptStatus}`);
             clearInterval(checkCompletionInterval);
-            return res.status(200).send(transcript.data);
+            const sentences = await assembly.get(`/transcript/${response.data.id}/sentences`);
+            return res.status(200).send(sentences.data)
           }
         }, refreshInterval)
       })
