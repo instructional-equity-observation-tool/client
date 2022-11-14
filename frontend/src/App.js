@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import axios from 'axios';
 function App(){
@@ -6,6 +5,7 @@ function App(){
     const [selectedFile, setSelectedFile] = useState();
     const [transcript, setTranscript] = useState("");
     const [sentences, setSentences] = useState("");
+    const [times, setTimes] = useState("");
     const [questions, setQuestions] = useState("");
     const [numQuestions, setNumQuestions] = useState("");
     const [isSelected, setIsSelected] = useState(false);
@@ -26,6 +26,7 @@ function App(){
                 setSentences(res.data.sentences);
                 createTranscript(res.data.sentences);
                 findQuestions(res.data.sentences);
+                printTimes(res.data.sentences)
             })
     };
 
@@ -50,6 +51,42 @@ function App(){
         setNumQuestions(qs.length);
         return qs;
     }
+
+    function printTimes(sentences){
+        var sStamps = [];
+        for(let i = 0; i < sentences.length; i++){
+            console.log(sentences[i].text.includes("?"));
+            if(sentences[i].text.includes("?")){
+
+                sStamps.push(convertMsToTime(sentences[i].start))
+            }
+        }
+        setTimes(sStamps)
+        return sStamps
+    }
+
+    function padTo2Digits(num) {
+        return num.toString().padStart(2, '0');
+    }
+
+    function convertMsToTime(milliseconds) {
+        let seconds = Math.floor(milliseconds / 1000);
+        let minutes = Math.floor(seconds / 60);
+        let hours = Math.floor(minutes / 60);
+      
+        seconds = seconds % 60;
+        minutes = minutes % 60;
+      
+        // 👇️ If you don't want to roll hours over, e.g. 24 to 00
+        // 👇️ comment (or remove) the line below
+        // commenting next line gets you `24:00:00` instead of `00:00:00`
+        // or `36:15:31` instead of `12:15:31`, etc.
+        hours = hours % 24;
+      
+        return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(
+          seconds,
+        )}`;
+      }
 
     return(
         <div>
@@ -118,9 +155,28 @@ function App(){
                                             <h2>Questions</h2>
                                         </div>
                                         <div className='card-body'>
-                                            {questions.map((question) => 
+                                            <div className="container">
+                                                <div className="row">
+                                                    <div className="col-sm">
+                                                        {questions.map((question, index) => 
+                                                            <ul className='row'>
+                                                                <li className='col-sm'>"{question.text}"</li>
+                                                                <li className='col-sm'>{times[index]}</li>
+                                                            </ul>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className='card mb-4 box-shadow'>
+                                        <div className='card-header'>
+                                            <h2>Question Timestamps</h2>
+                                        </div>
+                                        <div className='card-body'>
+                                            {times.map((time) => 
                                             <ul className='nav justify-content-center border-bottom'>
-                                                <li className='nav-item'>"{question.text}"</li>
+                                                <li className='nav-item'>"{time}"</li>
                                             </ul>
                                             )}
                                         </div>
