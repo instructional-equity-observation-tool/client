@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
+import ProgressBar from './progress';
+import { Modal } from 'bootstrap';
 function App(){
     
     const [selectedFile, setSelectedFile] = useState();
+    const [completed, setCompleted] = useState(0);
     const [transcript, setTranscript] = useState("");
     const [sentences, setSentences] = useState("");
     const [times, setTimes] = useState("");
@@ -11,6 +14,29 @@ function App(){
     const [isSelected, setIsSelected] = useState(false);
     const [isDisabled, setIsDisabled] = useState(false);
     const endpoint = "http://localhost:5000/upload";
+
+    /* useEffect(() => {
+        setInterval(() => setCompleted(Math.floor(Math.random() * 100) + 1), 2000);
+    }, []); */
+
+    var it = 0;
+
+    const modalRef = useRef()
+    
+    const showModal = () => {
+        const modalEle = modalRef.current
+        const bsModal = new Modal(modalEle, {
+            backdrop: 'static',
+            keyboard: false
+        })
+        bsModal.show()
+    }
+    
+    const hideModal = () => {
+        const modalEle = modalRef.current
+        const bsModal= Modal.getInstance(modalEle)
+        bsModal.hide()
+    }
 
 
     const handleFileChange = (event) => {
@@ -23,15 +49,28 @@ function App(){
             return;
         }
         setIsDisabled(true);
+        showModal();
+        
+        var interval = setInterval(()=>{
+            it += 1
+            console.log(completed)
+            setCompleted(it);
+            if(it === 95){
+                clearInterval(interval);
+            }
+            //do whatever here..
+        }, 2000);
         const data = new FormData();
         data.append('file', selectedFile);
         axios.post(endpoint, data)
             .then((res) => {
                 console.log(res);
+                it = 0;
                 setSentences(res.data.sentences);
                 createTranscript(res.data.sentences);
                 findQuestions(res.data.sentences);
-                printTimes(res.data.sentences)
+                printTimes(res.data.sentences);
+                setCompleted(0);
             })
     };
 
@@ -42,6 +81,7 @@ function App(){
         }
         setTranscript(transcript);
         setIsDisabled(false);
+        hideModal();
         return transcript;
     }
 
@@ -133,7 +173,23 @@ function App(){
                         <p>Select a file to show details</p>
                     )}
                     <div>
-                        <button type="button" className="btn btn-primary" disabled={isDisabled} onClick={handleSubmission}>Submit</button>
+                        <button type="button" className="btn btn-primary" disabled={isDisabled} data-bs-toggle="modal" data-bs-target="#progressModal" onClick={handleSubmission}>Submit</button>
+                        <div className="addEmployee">
+                            <div className="modal fade" ref={modalRef} tabIndex="-1" >
+                                <div className="modal-dialog">
+                                    <div className="modal-content">
+                                        <div className="modal-header">
+                                            <h5 className="modal-title" id="staticBackdropLabel">Analyzing</h5>
+                                        </div>
+                                        <div className="modal-body">
+                                            <div>
+                                                <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     {sentences ? (
                             <div>
