@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { knowledgeArray } from './knowledge';
+import { understandArray } from './understand';
+import { applyArray } from './apply';
+import { analyzeArray } from './analyze';
+import { evaluateArray } from './evaluate';
+import { createArray } from './create';
+
 function App(){
     
     const [selectedFile, setSelectedFile] = useState();
@@ -10,7 +17,10 @@ function App(){
     const [numQuestions, setNumQuestions] = useState("");
     const [isSelected, setIsSelected] = useState(false);
     const [isDisabled, setIsDisabled] = useState(false);
+    const [labeledQuestions, setLabeledQuestions] = useState("");
     const endpoint = "http://localhost:5000/upload";
+
+
 
 
     const handleFileChange = (event) => {
@@ -31,7 +41,7 @@ function App(){
                 setSentences(res.data.sentences);
                 createTranscript(res.data.sentences);
                 findQuestions(res.data.sentences);
-                printTimes(res.data.sentences)
+                printTimes(res.data.sentences);
             })
     };
 
@@ -48,13 +58,13 @@ function App(){
     function findQuestions(sentences){
         var qs = [];
         for(let i = 0; i < sentences.length; i++){
-            console.log(sentences[i].text.includes("?"));
             if(sentences[i].text.includes("?")){
                 qs.push(sentences[i])
             }
         }
         setQuestions(qs);
         setNumQuestions(qs.length);
+        findQuestionsLabels(qs);
         return qs;
     }
 
@@ -92,6 +102,56 @@ function App(){
         return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(
           seconds,
         )}`;
+      }
+
+
+      function findQuestionsLabels(quests){
+            var labeled = [quests.length];
+            for(let i = 0; i < quests.length; i++){
+                if(knowledgeArray.some(v => quests[i].text.includes(v))){
+                    if(labeled[i] === undefined){
+                        labeled[i] = 'Knowledge';
+                    }else{
+                        labeled[i] += 'Knowledge';
+                    }
+                }else if(analyzeArray.some(v => quests[i].text.includes(v))){
+                    if(labeled[i] === undefined){
+                        labeled[i] = 'Analyze';
+                    }else{
+                        labeled[i] += 'Analyze';
+                    }
+                }else if(applyArray.some(v => quests[i].text.includes(v))){
+                    if(labeled[i] === undefined){
+                        labeled[i] = 'Apply';
+                    }else{
+                        labeled[i] += 'Apply';
+                    }
+                }else if(createArray.some(v => quests[i].text.includes(v))){
+                    if(labeled[i] === undefined){
+                        labeled[i] = 'Create';
+                    }else{
+                        labeled[i] += 'Create';
+                    }
+                }else if(evaluateArray.some(v => quests[i].text.includes(v))){
+                    if(labeled[i] === undefined){
+                        labeled[i] = 'Evaluate';
+                    }else{
+                        labeled[i] += 'Evaluate';
+                    }
+                }else if(understandArray.some(v => quests[i].text.includes(v))){
+                    if(labeled[i] === undefined){
+                        labeled[i] = 'Understand';
+                    }else{
+                        labeled[i] += 'Understand';
+                    }
+                }else{
+                    labeled[i] = 'No Label';
+                }
+            }
+
+            setLabeledQuestions(labeled);
+            console.log(labeled);
+            return labeled;
       }
 
     return(
@@ -168,6 +228,7 @@ function App(){
                                                             <ul className='row'>
                                                                 <li className='col-sm'>"{question.text}"</li>
                                                                 <li className='col-sm'>{times[index]}</li>
+                                                                <li className='col-sm'>{labeledQuestions[index]}</li>
                                                             </ul>
                                                         )}
                                                     </div>
@@ -195,11 +256,26 @@ function App(){
                                             {numQuestions}
                                         </div>
                                     </div>
+                                    {/* <div className='card mb-4 box-shadow'>
+                                        <div className='card-header'>
+                                            <h2>Labeled Questions</h2>
+                                        </div>
+                                        <div className='card-body'>
+                                            {labeledQuestions.forEach((lq) => 
+                                                <ul className='nav justify-content-center border-bottom'>
+                                                    <li className='nav-item'>"{lq}"</li>
+                                                </ul>
+                                            )}
+                                        </div>
+                                    </div> */}
                                 </div>
 
                             </div>
                         ) : null}   
                     
+
+
+
                     <footer className='py-3 my-4' id='footer'>
                         <ul className='nav justify-content-center border-bottom pb-3 mb-3'>
                             <li className='nav-item'> 
