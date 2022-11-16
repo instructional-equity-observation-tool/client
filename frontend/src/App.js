@@ -287,6 +287,7 @@ function App(){
                                                             <th scope='col'>Question</th>
                                                             <th scope='col'>Time</th>
                                                             <th scope='col'>Speaker</th>
+                                                            <th scope='col'>Question Type</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -295,7 +296,7 @@ function App(){
                                                                 <td>"{question.text}"</td>
                                                                 <td>{times[index]}</td>
                                                                 <td>{speakers[index]}</td>
-                                                                <li className='col-sm'>{labeledQuestions[index]}</li>
+                                                                <td>{labeledQuestions[index]}</td>
                                                             </tr>
                                                         )}
                                                     </tbody>
