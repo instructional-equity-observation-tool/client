@@ -9,6 +9,7 @@ function App(){
     const [transcript, setTranscript] = useState("");
     const [sentences, setSentences] = useState("");
     const [times, setTimes] = useState("");
+    const [speakers, setSpeakers] = useState("");
     const [questions, setQuestions] = useState("");
     const [numQuestions, setNumQuestions] = useState("");
     const [isSelected, setIsSelected] = useState(false);
@@ -57,6 +58,7 @@ function App(){
             setCompleted(it);
             if(it === 95){
                 clearInterval(interval);
+                it = 0;
             }
             //do whatever here..
         }, 2000);
@@ -100,14 +102,17 @@ function App(){
 
     function printTimes(sentences){
         var sStamps = [];
+        var speaks = [];
         for(let i = 0; i < sentences.length; i++){
             console.log(sentences[i].text.includes("?"));
             if(sentences[i].text.includes("?")){
 
                 sStamps.push(convertMsToTime(sentences[i].start))
+                speaks.push(sentences[i].speaker)
             }
         }
-        setTimes(sStamps)
+        setTimes(sStamps);
+        setSpeakers(speaks);
         return sStamps
     }
 
@@ -218,16 +223,24 @@ function App(){
                                         </div>
                                         <div className='card-body'>
                                             <div className="container">
-                                                <div className="row">
-                                                    <div className="col-sm">
+                                                <table className='table'>
+                                                    <thead>
+                                                        <tr>
+                                                            <th scope='col'>Question</th>
+                                                            <th scope='col'>Time</th>
+                                                            <th scope='col'>Speaker</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
                                                         {questions.map((question, index) => 
-                                                            <ul className='row'>
-                                                                <li className='col-sm'>"{question.text}"</li>
-                                                                <li className='col-sm'>{times[index]}</li>
-                                                            </ul>
+                                                            <tr>
+                                                                <td>"{question.text}"</td>
+                                                                <td>{times[index]}</td>
+                                                                <td>{speakers[index]}</td>
+                                                            </tr>
                                                         )}
-                                                    </div>
-                                                </div>
+                                                    </tbody>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
