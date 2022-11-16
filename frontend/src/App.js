@@ -1,225 +1,151 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+
 function App(){
-    
-    const [selectedFile, setSelectedFile] = useState();
-    const [transcript, setTranscript] = useState("");
-    const [sentences, setSentences] = useState("");
-    const [times, setTimes] = useState("");
-    const [questions, setQuestions] = useState("");
-    const [numQuestions, setNumQuestions] = useState("");
-    const [isSelected, setIsSelected] = useState(false);
-    const [isDisabled, setIsDisabled] = useState(false);
-    const endpoint = "http://localhost:5000/upload";
+
+	const [selectedFile, setSelectedFile] = useState();
+	let [transcript, setTranscript] = useState(null);
+	const [isSelected, setIsSelected] = useState(false);
+	const endpoint = "http://localhost:5000/upload";
+
+	//let transcript = null
+
+	const handleFileChange = (event) => {
+		setSelectedFile(event.target.files[0]);
+		setIsSelected(true);
+	};
+
+	const handleSubmission = () => {
+			const data = new FormData();
+			data.append('file', selectedFile);
+			axios.post(endpoint, data)
+				.then((res) => {
+					console.log(res);
+					setTranscript(res.data.sentences);
+				})
+		};
+
+	function getTranscript(){
+		if(transcript != null){
+			console.log("this is the transcript");
+			console.log(transcript);
+			return transcript;
+		}
+		setTimeout(getTranscript, 300);
+	}
+
+	function checkQuestion(sentence){
+		if(sentence.includes("?")){
+			console.log("sentence " + sentence + " passed");
+			return true;
+		}
+		console.log("sentence: " + sentence + " failed")
+		return false;
+	}
+
+	function filterQuestions(transcript){
+		const questions = [];
+		for(let i = 0; i < transcript.length; i++){
+			if(checkQuestion(transcript[i].text)){
+				questions.push(transcript[i].text);
+			}
+		}
+		for(let i = 0; i < questions.length; i++) {
+			console.log("questions: " + questions[i])
+		}
+		return questions;
+	}
+
+    //TODO: Label top speaker as Teacher
+	function sumSpeakingTime(transcript){
+		let totalTime = 0;
+		for(let i = 0; i < transcript.length; i++){
+			totalTime += (transcript[i].end - transcript[i].start);
+		}
+		return totalTime
+	}
+
+	function totalSpeakers(transcript) {
+		let speakerList = [];
+		for(let i = 0; i < transcript.length; i++){
+			if(!(speakerList.includes(transcript[i].speaker))){
+				speakerList.push(transcript[i].speaker);
+			}
+		}
+		console.log("Speakers Detected: ");
+		for(let i = 0; i < speakerList.length; i++) {
+			console.log(speakerList[i]);
+		}
+		console.log("Total Speakers: " + speakerList.length);
+		return speakerList;
+	}
+
+	function getSpeakingTime(speakerName){
+		let speakingTime = 0;
+		for(let i = 0; i < transcript.length; i++){
+			if(transcript[i].speaker === speakerName){
+				speakingTime += (transcript[i].end - transcript[i].start);
+			}
+		}
+		return speakingTime;
+	}
 
 
-    const handleFileChange = (event) => {
-        setSelectedFile(event.target.files[0]);
-        setIsSelected(true);
-    };
+	return(
+   		<div>
+			<input type="file" name="file" onChange={handleFileChange} />
+			{isSelected ? (
+				<div>
+					<p>Filename: {selectedFile.name}</p>
+					<p>Filetype: {selectedFile.type}</p>
+					<p>Size in bytes: {selectedFile.size}</p>
+					<p>
+						lastModifiedDate:{' '}
+						{selectedFile.lastModifiedDate.toLocaleDateString()}
+					</p>
+				</div>
+			) : (
+				<p>Select a file to show details</p>
+			)}
+			<div>
+				<button onClick={handleSubmission}>Submit</button>
+			</div>
+			{getTranscript() ? (
+				<div>
+					<h1>Sentences</h1>
+					<ul>
+						{transcript.map(item => (
+							<div>
+								<h3>SPOKEN BY: Speaker {item.speaker}</h3>
+								<h4>"{item.text}"</h4>
+								<p>Timestamp: {Math.round((item.start/1000) * 100)/ 100} Seconds to {Math.round((item.end/1000) * 100)/ 100} Seconds</p>
+								<p>Total Time: {Math.round((item.end/1000 - item.start/1000) * 100) / 100} Seconds</p>
+								<p>__________________________________________</p>
+							</div>
+						))}
+					</ul>
+					<h2> Notable Questions </h2>
 
-    var handleSubmission = () => {
-        if (isDisabled) {
-            return;
-        }
-        setIsDisabled(true);
-        const data = new FormData();
-        data.append('file', selectedFile);
-        axios.post(endpoint, data)
-            .then((res) => {
-                console.log(res);
-                setSentences(res.data.sentences);
-                createTranscript(res.data.sentences);
-                findQuestions(res.data.sentences);
-                printTimes(res.data.sentences)
-            })
-    };
+					<ul>
+						{filterQuestions(transcript).map(item => (
 
-    function createTranscript(sentences){
-        var transcript = "";
-        for(let i = 0; i < sentences.length; i++){
-            transcript += " " + sentences[i].text;
-        }
-        setTranscript(transcript);
-        setIsDisabled(false);
-        return transcript;
-    }
-
-    function findQuestions(sentences){
-        var qs = [];
-        for(let i = 0; i < sentences.length; i++){
-            console.log(sentences[i].text.includes("?"));
-            if(sentences[i].text.includes("?")){
-                qs.push(sentences[i])
-            }
-        }
-        setQuestions(qs);
-        setNumQuestions(qs.length);
-        return qs;
-    }
-
-    function printTimes(sentences){
-        var sStamps = [];
-        for(let i = 0; i < sentences.length; i++){
-            console.log(sentences[i].text.includes("?"));
-            if(sentences[i].text.includes("?")){
-
-                sStamps.push(convertMsToTime(sentences[i].start))
-            }
-        }
-        setTimes(sStamps)
-        return sStamps
-    }
-
-    function padTo2Digits(num) {
-        return num.toString().padStart(2, '0');
-    }
-
-    function convertMsToTime(milliseconds) {
-        let seconds = Math.floor(milliseconds / 1000);
-        let minutes = Math.floor(seconds / 60);
-        let hours = Math.floor(minutes / 60);
-      
-        seconds = seconds % 60;
-        minutes = minutes % 60;
-      
-        // 👇️ If you don't want to roll hours over, e.g. 24 to 00
-        // 👇️ comment (or remove) the line below
-        // commenting next line gets you `24:00:00` instead of `00:00:00`
-        // or `36:15:31` instead of `12:15:31`, etc.
-        hours = hours % 24;
-      
-        return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(
-          seconds,
-        )}`;
-      }
-
-    return(
-        <div>
-            <nav className="navbar navbar-expand-lg bg-dark">
-                <a className="navbar-brand" href="#">
-                    <img src="https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/2628.png" className="tcu-image" width="80" height="80" alt=""/>
-                </a>
-
-                <div className="collapse navbar-collapse justify-content-end" id="navbarCollapse">
-                    <ul className="navbar-nav">
-                        <li className="nav-item">
-                            <a className="nav-link text-light" href="#">About Us</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link text-light" href="#">IEOT</a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link text-light" href="#">Contact Us</a>
-                        </li>
-                    </ul>
-                </div>
-            </nav>
-        
-            <div className='container' id='fileInputGroup'>
-                <label className="form-label" htmlFor="customFile">Please Upload a File for Transcription</label>
-                <input type="file" className="form-control" id="customFile" onChange={handleFileChange}/>
-                    {isSelected ? (
-                        <div>
-                            <p>Filename: {selectedFile.name}</p>
-                            <p>Filetype: {selectedFile.type}</p>
-                            <p>Size in bytes: {selectedFile.size}</p>
-                            <p>
-                                lastModifiedDate:{' '}
-                                {selectedFile.lastModifiedDate.toLocaleDateString()}
-                            </p>
-                        </div>
-                    ) : (
-                        <p>Select a file to show details</p>
-                    )}
-                    <div>
-                        <button type="button" className="btn btn-primary" disabled={isDisabled} onClick={handleSubmission}>Submit</button>
-                    </div>
-                    {sentences ? (
-                            <div>
-                                <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
-                                    <h1>Full Transcript</h1>
-                                    <p className='lead'>
-                                        {transcript}
-                                    </p>
-                                </div>
-                                <div className="card-deck mb-3 text-center">
-                                    <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Sentences</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                                {sentences.map((sentence) => 
-                                                <ul className='nav justify-content-center border-bottom'>
-                                                    <li className='nav-item'>"{sentence.text}"</li>
-                                                </ul>
-                                                )}
-                                        </div>
-                                    </div>
-                                    <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Questions</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                            <div className="container">
-                                                <div className="row">
-                                                    <div className="col-sm">
-                                                        {questions.map((question, index) => 
-                                                            <ul className='row'>
-                                                                <li className='col-sm'>"{question.text}"</li>
-                                                                <li className='col-sm'>{times[index]}</li>
-                                                            </ul>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Question Timestamps</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                            {times.map((time) => 
-                                            <ul className='nav justify-content-center border-bottom'>
-                                                <li className='nav-item'>"{time}"</li>
-                                            </ul>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Number of Questions</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                            {numQuestions}
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        ) : null}   
-                    
-                    <footer className='py-3 my-4' id='footer'>
-                        <ul className='nav justify-content-center border-bottom pb-3 mb-3'>
-                            <li className='nav-item'> 
-                                <a href='#' className='nav-link px-2 text-muted'>Home</a>
-                            </li>
-                            <li className='nav-item'> 
-                                <a href='#' className='nav-link px-2 text-muted'>Features</a>
-                            </li>
-                            <li className='nav-item'> 
-                                <a href='#' className='nav-link px-2 text-muted'>FAQs</a>
-                            </li>
-                            <li className='nav-item'> 
-                                <a href='#' className='nav-link px-2 text-muted'>Pricing</a>
-                            </li>
-                        </ul>
-                        <p className='text-center text-muted'>© 2022 Instructional Equity Observation Tool, Inc</p>
-                    </footer>
-                </div>
-        </div>
-    )
+							<li><h3>{item} </h3></li>
+						))}
+					</ul>
+					<p>__________________________________________</p>
+					<h2>Total File Time: {(Math.round((transcript[transcript.length-1].end/1000) * 100) / 100)} Seconds</h2>
+					<h2>Total Speakers: {totalSpeakers(transcript).length}</h2>
+					<h2>Total Speaking Time: {(Math.round((sumSpeakingTime(transcript)/1000) * 100) / 100) } Seconds</h2>
+					{totalSpeakers(transcript).map(speaker => (
+						<h3>Speaker {speaker} spoke {(Math.round((getSpeakingTime(speaker)/1000) * 100) / 100)} seconds</h3>
+					))}
+					<h2>Total Sentences: {transcript.length}</h2>
+					<h2>Total Questions: {filterQuestions(transcript).length}</h2>
+					<p>__________________________________________</p>
+				</div>
+			) : <p>no transcript</p> }
+		</div>
+	)
 }
 
 export default App;

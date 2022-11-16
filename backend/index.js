@@ -1,10 +1,9 @@
-//Micah Backend Code Version
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const cors = require('cors');
 const axios = require('axios');
 const fs = require("fs");
-//edited to test
+
 const refreshInterval = 5000;
 const PORT = 5000;
 const app = express();
@@ -12,10 +11,11 @@ const app = express();
 const assembly = axios.create({
     baseURL: "https://api.assemblyai.com/v2",
     headers: {
-        authorization: "c4c56ac5832249c1af9589d097463339",
+        "authorization": "c4c56ac5832249c1af9589d097463339",
         "content-type": "application/json",
-        "transfer-encoding": "chunked",
+        "transfer-encoding": "chunked"
     },
+
 });
 
 app.use(
@@ -34,7 +34,7 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log('Server Running sucessfully.');
+  console.log('Server Running successfully.');
 });
 
 app.post('/upload', function(req, res) {
@@ -49,24 +49,30 @@ app.post('/upload', function(req, res) {
 
     assembly.post("/upload", data)
       .then((response) => {
-        console.log('RESPONSE: ', response);
+        console.log('response: ', response);
+        const assembly2 = assembly;
         assembly.post("/transcript", {
               audio_url: response.data.upload_url,
-              speaker_labels: true
+            speaker_labels: true,
+            sentiment_analysis: true,
+            //summarization and auto_chapters mutually exclusive
+            //summarization: true,
+            summary_type: "bullets",
+            auto_chapters: true
           })
       .then((response) => {
         // Interval for checking transcript completion
         const checkCompletionInterval = setInterval(async () => {
           const transcript = await assembly.get(`/transcript/${response.data.id}`);
           const transcriptStatus = transcript.data.status;
-          
+
           if (transcriptStatus !== "completed") {
             console.log(`Transcript Status: ${transcriptStatus}`);
           } else if (transcriptStatus === "completed") {
             console.log(`Transcript Status: ${transcriptStatus}`);
             clearInterval(checkCompletionInterval);
-            const sentences = await assembly.get(`/transcript/${response.data.id}/sentences`);
-            return res.status(200).send(sentences.data)
+            const transcriptSentences = await assembly.get(`/transcript/${response.data.id}/sentences`);
+            return res.status(200).send(transcriptSentences.data);
           }
         }, refreshInterval)
       })
