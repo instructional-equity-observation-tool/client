@@ -1,4 +1,5 @@
-export const analyzeArray = ["analyze",
+export const analyzeArray = [
+    "analyze",
     "compare",
     "classify",
     "contrast",
@@ -30,4 +31,6 @@ export const analyzeArray = ["analyze",
     "outline",
     "plan",
     "question",
-    "test"]
+    "test",
+    "difference"
+]

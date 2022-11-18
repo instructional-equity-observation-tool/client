@@ -1,4 +1,5 @@
-export const knowledgeArray = ["define",
+export const knowledgeArray = [
+    "define",
     "identify",
     "describe",
     "label",
@@ -28,4 +29,5 @@ export const knowledgeArray = ["define",
     "record",
     "repeat",
     "retell",
-    "visualize"]
+    "visualize",
+]

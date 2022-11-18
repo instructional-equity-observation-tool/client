@@ -149,46 +149,69 @@ function App(){
 
 
       function findQuestionsLabels(quests){
-            var labeled = [quests.length];
+            var labeled = new Array(quests.length);
+
+
+            for(var j = 0; j < labeled.length; j++){
+                labeled[j] = '';
+            }
+
             for(let i = 0; i < quests.length; i++){
-                if(knowledgeArray.some(v => quests[i].text.includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Knowledge';
-                    }else{
-                        labeled[i] += 'Knowledge';
+                for(let j = 0; j < quests[i].words.length; j++){
+
+                    var tempWord = quests[i].words[j].text.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
+
+                    if(knowledgeArray.some(v => tempWord === v)){
+                        if(labeled[i] === ''){
+                            labeled[i] = 'Knowledge';
+                        }else if(!labeled[i].includes('Knowledge')){
+                            labeled[i] += ' & Knowledge';
+                        }
                     }
-                }else if(analyzeArray.some(v => quests[i].text.includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Analyze';
-                    }else{
-                        labeled[i] += 'Analyze';
+
+                    if(analyzeArray.some(v => tempWord === v)){
+                        if(labeled[i] === ''){                           
+                            labeled[i] = 'Analyze';
+                        }else{
+                            labeled[i] += ' & Analyze';
+                        }
                     }
-                }else if(applyArray.some(v => quests[i].text.includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Apply';
-                    }else{
-                        labeled[i] += 'Apply';
+                    
+                    if(applyArray.some(v => tempWord === v)){
+                        if(labeled[i] === ''){                          
+                            labeled[i] = 'Apply';
+                        }else if(!labeled[i].includes('Apply')){
+                            labeled[i] += ' & Apply';
+                        }
                     }
-                }else if(createArray.some(v => quests[i].text.includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Create';
-                    }else{
-                        labeled[i] += 'Create';
+    
+                    if(createArray.some(v => tempWord === v)){
+                        if(labeled[i] === ''){
+                            labeled[i] = 'Create';
+                        }else if(!labeled[i].includes('Create')){
+                            labeled[i] += ' & Create';
+                        }
                     }
-                }else if(evaluateArray.some(v => quests[i].text.includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Evaluate';
-                    }else{
-                        labeled[i] += 'Evaluate';
+                    
+                    if(evaluateArray.some(v => tempWord === v)){
+                        if(labeled[i] === ''){
+                            labeled[i] = 'Evaluate';
+                        }else if(!labeled[i].includes('Evaluate')){
+                            labeled[i] += ' & Evaluate';
+                        }
                     }
-                }else if(understandArray.some(v => quests[i].text.includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Understand';
-                    }else{
-                        labeled[i] += 'Understand';
+                    
+                    if(understandArray.some(v => tempWord === v)){
+                        if(labeled[i] === ''){
+                            labeled[i] = 'Understand';
+                        }else if(!labeled[i].includes('Understand')){
+                            labeled[i] += ' & Understand';
+                        }
                     }
-                }else{
-                    labeled[i] = 'No Label';
+                }
+                
+                if(labeled[i] === ''){
+                    labeled[i] = "Non-Bloom's";
                 }
             }
 
@@ -284,8 +307,8 @@ function App(){
                                                 <table className='table'>
                                                     <thead>
                                                         <tr>
-                                                            <th scope='col'>Question</th>
                                                             <th scope='col'>Time</th>
+                                                            <th scope='col'>Question</th>
                                                             <th scope='col'>Speaker</th>
                                                             <th scope='col'>Question Type</th>
                                                         </tr>
@@ -293,8 +316,8 @@ function App(){
                                                     <tbody>
                                                         {questions.map((question, index) => 
                                                             <tr>
-                                                                <td>"{question.text}"</td>
-                                                                <td>{times[index]}</td>
+                                                                <td>"{times[index]}"</td>
+                                                                <td>{question.text}</td>
                                                                 <td>{speakers[index]}</td>
                                                                 <td>{labeledQuestions[index]}</td>
                                                             </tr>
@@ -324,24 +347,9 @@ function App(){
                                             {numQuestions}
                                         </div>
                                     </div>
-                                    {/* <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Labeled Questions</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                            {labeledQuestions.forEach((lq) => 
-                                                <ul className='nav justify-content-center border-bottom'>
-                                                    <li className='nav-item'>"{lq}"</li>
-                                                </ul>
-                                            )}
-                                        </div>
-                                    </div> */}
                                 </div>
-
                             </div>
                         ) : null}   
-                    
-
 
 
                     <footer className='py-3 my-4' id='footer'>
