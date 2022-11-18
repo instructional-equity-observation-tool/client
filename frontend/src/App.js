@@ -155,7 +155,7 @@ function App(){
     }
 
 
-      function findQuestionsLabels(quests){
+        function findQuestionsLabels(quests){
             var labeled = new Array(quests.length);
 
 
@@ -222,12 +222,11 @@ function App(){
                 }
 
             }
-                
+
+            setLabeledQuestions(labeled);
+            console.log(labeled);
+            return labeled;
         }
-        setLabeledQuestions(labeled);
-        console.log(labeled);
-        return labeled;
-    }
 
     function generatePDF() {
 
@@ -473,7 +472,7 @@ function App(){
                 </footer>
             </div>
         </div>
-    )
+    );
 }
 
 export default App;
