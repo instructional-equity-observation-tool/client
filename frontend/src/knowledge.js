@@ -30,4 +30,8 @@ export const knowledgeArray = [
     "repeat",
     "retell",
     "visualize",
+<<<<<<< HEAD
 ]
+=======
+    "remember"]
+>>>>>>> 8a67b6d665f3ccf5d860c385a38396d98bb8e2e8

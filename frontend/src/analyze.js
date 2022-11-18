@@ -32,5 +32,9 @@ export const analyzeArray = [
     "plan",
     "question",
     "test",
+<<<<<<< HEAD
     "difference"
 ]
+=======
+    "difference"]
+>>>>>>> 8a67b6d665f3ccf5d860c385a38396d98bb8e2e8
