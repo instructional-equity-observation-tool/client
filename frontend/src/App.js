@@ -9,8 +9,11 @@ import { createArray } from './create';
 
 import ProgressBar from './progress';
 import { Modal } from 'bootstrap';
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+
 function App(){
-    
+
     const [selectedFile, setSelectedFile] = useState();
     const [completed, setCompleted] = useState(0);
     const [transcript, setTranscript] = useState("");
@@ -32,7 +35,7 @@ function App(){
     var it = 0;
 
     const modalRef = useRef()
-    
+
     const showModal = () => {
         const modalEle = modalRef.current
         const bsModal = new Modal(modalEle, {
@@ -41,7 +44,7 @@ function App(){
         })
         bsModal.show()
     }
-    
+
     const hideModal = () => {
         const modalEle = modalRef.current
         const bsModal= Modal.getInstance(modalEle)
@@ -60,7 +63,7 @@ function App(){
         }
         setIsDisabled(true);
         showModal();
-        
+
         var interval = setInterval(()=>{
             it += 1
             console.log(completed)
@@ -136,69 +139,151 @@ function App(){
         let seconds = Math.floor(milliseconds / 1000);
         let minutes = Math.floor(seconds / 60);
         let hours = Math.floor(minutes / 60);
-      
+
         seconds = seconds % 60;
         minutes = minutes % 60;
-      
+
         // 👇️ If you don't want to roll hours over, e.g. 24 to 00
         // 👇️ comment (or remove) the line below
         // commenting next line gets you `24:00:00` instead of `00:00:00`
         // or `36:15:31` instead of `12:15:31`, etc.
         hours = hours % 24;
-      
+
         return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(
-          seconds,
+            seconds,
         )}`;
-      }
+    }
 
 
-      function findQuestionsLabels(quests){
-            var labeled = [quests.length];
-            for(let i = 0; i < quests.length; i++){
-                if(knowledgeArray.some(v => quests[i].text.toLowerCase().includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Knowledge';
-                    }else{
-                        labeled[i] += 'Knowledge';
-                    }
-                }else if(analyzeArray.some(v => quests[i].text.toLowerCase().includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Analyze';
-                    }else{
-                        labeled[i] += 'Analyze';
-                    }
-                }else if(applyArray.some(v => quests[i].text.toLowerCase().includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Apply';
-                    }else{
-                        labeled[i] += 'Apply';
-                    }
-                }else if(createArray.some(v => quests[i].text.toLowerCase().includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Create';
-                    }else{
-                        labeled[i] += 'Create';
-                    }
-                }else if(evaluateArray.some(v => quests[i].text.toLowerCase().includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Evaluate';
-                    }else{
-                        labeled[i] += 'Evaluate';
-                    }
-                }else if(understandArray.some(v => quests[i].text.toLowerCase().includes(v))){
-                    if(labeled[i] === undefined){
-                        labeled[i] = 'Understand';
-                    }else{
-                        labeled[i] += 'Understand';
-                    }
+    function findQuestionsLabels(quests){
+        var labeled = [quests.length];
+        for(let i = 0; i < quests.length; i++){
+            if(knowledgeArray.some(v => quests[i].text.toLowerCase().includes(v))){
+                if(labeled[i] === undefined){
+                    labeled[i] = 'Knowledge';
                 }else{
-                    labeled[i] = 'Ambiguous';
+                    labeled[i] += 'Knowledge';
                 }
+            }else if(analyzeArray.some(v => quests[i].text.toLowerCase().includes(v))){
+                if(labeled[i] === undefined){
+                    labeled[i] = 'Analyze';
+                }else{
+                    labeled[i] += 'Analyze';
+                }
+            }else if(applyArray.some(v => quests[i].text.toLowerCase().includes(v))){
+                if(labeled[i] === undefined){
+                    labeled[i] = 'Apply';
+                }else{
+                    labeled[i] += 'Apply';
+                }
+            }else if(createArray.some(v => quests[i].text.toLowerCase().includes(v))){
+                if(labeled[i] === undefined){
+                    labeled[i] = 'Create';
+                }else{
+                    labeled[i] += 'Create';
+                }
+            }else if(evaluateArray.some(v => quests[i].text.toLowerCase().includes(v))){
+                if(labeled[i] === undefined){
+                    labeled[i] = 'Evaluate';
+                }else{
+                    labeled[i] += 'Evaluate';
+                }
+            }else if(understandArray.some(v => quests[i].text.toLowerCase().includes(v))){
+                if(labeled[i] === undefined){
+                    labeled[i] = 'Understand';
+                }else{
+                    labeled[i] += 'Understand';
+                }
+            }else{
+                labeled[i] = 'Ambiguous';
             }
-            setLabeledQuestions(labeled);
-            console.log(labeled);
-            return labeled;
-      }
+        }
+        setLabeledQuestions(labeled);
+        console.log(labeled);
+        return labeled;
+    }
+
+    function generatePDF() {
+
+        console.log("Inputted transcript: " + transcript)
+        console.log("Inputted sentences: ")
+        console.dir(sentences)
+        console.log("Inputted questions: ")
+        console.dir(labeledQuestions)
+        var doc = new jsPDF('p', 'pt', 'letter')
+
+        var sentenceArray = new Array();
+        for(let i = 0; i < sentences.length; i++){
+            sentenceArray[i] = new Array(sentences[i].speaker, sentences[i].text, convertMsToTime(sentences[i].end - sentences[i].start));
+            console.log("sentenceArray " + i + ": " + sentenceArray[i])
+        }
+
+        var questionArray = new Array();
+        for(let i = 0; i < questions.length; i++){
+            console.log("labeledQuestions " + i + ": " + labeledQuestions[i])
+            questionArray[i] = new Array(questions[i].text, labeledQuestions[i]);
+            console.log("questionArray " + i + ": " + questionArray[i])
+        }
+
+        //var speakTimeArray = new Array();
+        //for(let i = 0; i < questions.length; i++){
+            //speakTimeArray[i] = new Array(speakTimeArray[i].text, "Question Category");
+            //console.log("questionArray " + i + ": " + questionArray[i])
+        //}
+
+        var y = 10;
+        doc.setLineWidth(2);
+        doc.text(200, y = y + 30, "Your File Analysis Report");
+        doc.autoTable({
+            head: [["Speaker", "Sentence","Duration"]],
+            body: sentenceArray,
+            startY: 70,
+            theme: 'grid',
+        })
+
+        doc.addPage();
+        doc.autoTable({
+            head: [["Question", "Category"]],
+            body: questionArray,
+            theme: 'grid',
+        })
+
+        doc.save('demo.pdf')
+    }
+
+    //functions pasted from Micah Branch
+    function sumSpeakingTime(transcript){
+        let totalTime = 0;
+        for(let i = 0; i < transcript.length; i++){
+            totalTime += (transcript[i].end - transcript[i].start);
+        }
+        return totalTime
+    }
+
+    function totalSpeakers(transcript) {
+        let speakerList = [];
+        for(let i = 0; i < transcript.length; i++){
+            if(!(speakerList.includes(transcript[i].speaker))){
+                speakerList.push(transcript[i].speaker);
+            }
+        }
+        console.log("Speakers Detected: ");
+        for(let i = 0; i < speakerList.length; i++) {
+            console.log(speakerList[i]);
+        }
+        console.log("Total Speakers: " + speakerList.length);
+        return speakerList;
+    }
+
+    function getSpeakingTime(speakerName){
+        let speakingTime = 0;
+        for(let i = 0; i < transcript.length; i++){
+            if(transcript[i].speaker === speakerName){
+                speakingTime += (transcript[i].end - transcript[i].start);
+            }
+        }
+        return speakingTime;
+    }
 
     return(
         <div>
@@ -221,158 +306,158 @@ function App(){
                     </ul>
                 </div>
             </nav>
-        
+
             <div className='container' id='fileInputGroup'>
                 <label className="form-label" htmlFor="customFile">Please Upload a File for Transcription</label>
                 <input type="file" className="form-control" id="customFile" onChange={handleFileChange}/>
-                    {isSelected ? (
-                        <div>
-                            <p>Filename: {selectedFile.name}</p>
-                            <p>Filetype: {selectedFile.type}</p>
-                            <p>Size in bytes: {selectedFile.size}</p>
-                            <p>
-                                lastModifiedDate:{' '}
-                                {selectedFile.lastModifiedDate.toLocaleDateString()}
-                            </p>
-                        </div>
-                    ) : (
-                        <p>Select a file to show details</p>
-                    )}
+                {isSelected ? (
                     <div>
-                        <button type="button" className="btn btn-primary" disabled={isDisabled} data-bs-toggle="modal" data-bs-target="#progressModal" onClick={handleSubmission}>Submit</button>
-                        <div className="addEmployee">
-                            <div className="modal fade" ref={modalRef} tabIndex="-1" >
-                                <div className="modal-dialog">
-                                    <div className="modal-content">
-                                        <div className="modal-header">
-                                            <h5 className="modal-title" id="staticBackdropLabel">Analyzing</h5>
-                                        </div>
-                                        <div className="modal-body">
-                                            <div>
-                                                <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
-                                            </div>
+                        <p>Filename: {selectedFile.name}</p>
+                        <p>Filetype: {selectedFile.type}</p>
+                        <p>Size in bytes: {selectedFile.size}</p>
+                        <p>
+                            lastModifiedDate:{' '}
+                            {selectedFile.lastModifiedDate.toLocaleDateString()}
+                        </p>
+                    </div>
+                ) : (
+                    <p>Select a file to show details</p>
+                )}
+                <div>
+                    <button type="button" className="btn btn-primary" disabled={isDisabled} data-bs-toggle="modal" data-bs-target="#progressModal" onClick={handleSubmission}>Submit</button>
+                    <div className="addEmployee">
+                        <div className="modal fade" ref={modalRef} tabIndex="-1" >
+                            <div className="modal-dialog">
+                                <div className="modal-content">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title" id="staticBackdropLabel">Analyzing</h5>
+                                    </div>
+                                    <div className="modal-body">
+                                        <div>
+                                            <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {sentences ? (
-                            <div>
-                                <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
-                                    <h1>Full Transcript</h1>
-                                    <p className='lead'>
-                                        {transcript}
-                                    </p>
+                </div>
+                {sentences ? (
+                    <div>
+                        <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+                            <h1>Full Transcript</h1>
+                            <p className='lead'>
+                                {transcript}
+                            </p>
+                        </div>
+                        <div className="card-deck mb-3 text-center">
+                            <div className='card mb-4 box-shadow'>
+                                <div className='card-header'>
+                                    <h2>Sentences</h2>
                                 </div>
-                                <div className="card-deck mb-3 text-center">
-                                    <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Sentences</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                                {sentences.map((sentence) => 
-                                                <ul className='nav justify-content-center border-bottom'>
-                                                    <li className='nav-item'>"{sentence.text}"</li>
-                                                </ul>
-                                                )}
-                                        </div>
-                                    </div>
-                                    <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Questions</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                            <div className="container">
-                                                <table className='table'>
-                                                    <thead>
-                                                        <tr>
-                                                            <th scope='col'>Time</th>
-                                                            <th scope='col'>Question</th>
-                                                            <th scope='col'>Speaker</th>
-                                                            <th scope='col'>Question Type</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {questions.map((question, index) => 
-                                                            <tr>
-                                                                <td>{times[index]}</td>
-                                                                <td>"{question.text}"</td>
-                                                                <td>{speakers[index]}</td>
-                                                                <td>{labeledQuestions[index]}</td>
-                                                            </tr>
-                                                        )}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Question Timestamps</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                            {times.map((time) => 
-                                                <ul className='nav justify-content-center border-bottom'>
-                                                    <li className='nav-item'>"{time}"</li>
-                                                </ul>
+                                <div className='card-body'>
+                                    {sentences.map((sentence) =>
+                                        <ul className='nav justify-content-center border-bottom'>
+                                            <li className='nav-item'>"{sentence.text}"</li>
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
+                            <div className='card mb-4 box-shadow'>
+                                <div className='card-header'>
+                                    <h2>Questions</h2>
+                                </div>
+                                <div className='card-body'>
+                                    <div className="container">
+                                        <table className='table'>
+                                            <thead>
+                                            <tr>
+                                                <th scope='col'>Time</th>
+                                                <th scope='col'>Question</th>
+                                                <th scope='col'>Speaker</th>
+                                                <th scope='col'>Question Type</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            {questions.map((question, index) =>
+                                                <tr>
+                                                    <td>{times[index]}</td>
+                                                    <td>"{question.text}"</td>
+                                                    <td>{speakers[index]}</td>
+                                                    <td>{labeledQuestions[index]}</td>
+                                                </tr>
                                             )}
-                                        </div>
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Number of Questions</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                            <h2>{numQuestions}</h2>
-                                        </div>
-                                    </div>
-                                    <div className='card mb-4 box-shadow'>
-                                        <div className='card-header'>
-                                            <h2>Total Questioning Time</h2>
-                                        </div>
-                                        <div className='card-body'>
-                                            <h2>{questioningTime}</h2>
-                                        </div>
-                                    </div>
-                                    {/* <div className='card mb-4 box-shadow'>
+                                </div>
+                            </div>
+                            <div className='card mb-4 box-shadow'>
+                                <div className='card-header'>
+                                    <h2>Question Timestamps</h2>
+                                </div>
+                                <div className='card-body'>
+                                    {times.map((time) =>
+                                        <ul className='nav justify-content-center border-bottom'>
+                                            <li className='nav-item'>"{time}"</li>
+                                        </ul>
+                                    )}
+                                </div>
+                            </div>
+                            <div className='card mb-4 box-shadow'>
+                                <div className='card-header'>
+                                    <h2>Number of Questions</h2>
+                                </div>
+                                <div className='card-body'>
+                                    <h2>{numQuestions}</h2>
+                                </div>
+                            </div>
+                            <div className='card mb-4 box-shadow'>
+                                <div className='card-header'>
+                                    <h2>Total Questioning Time</h2>
+                                </div>
+                                <div className='card-body'>
+                                    <h2>{questioningTime}</h2>
+                                </div>
+                            </div>
+                            {/* <div className='card mb-4 box-shadow'>
                                         <div className='card-header'>
                                             <h2>Labeled Questions</h2>
                                         </div>
                                         <div className='card-body'>
-                                            {labeledQuestions.forEach((lq) => 
+                                            {labeledQuestions.forEach((lq) =>
                                                 <ul className='nav justify-content-center border-bottom'>
                                                     <li className='nav-item'>"{lq}"</li>
                                                 </ul>
                                             )}
                                         </div>
                                     </div> */}
-                                </div>
+                        </div>
 
-                            </div>
-                        ) : null}   
-                    
+                        <div>
+                            <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">Download PDF</button>
+                        </div>
+                    </div>
+                ) : null}
 
-
-
-                    <footer className='py-3 my-4' id='footer'>
-                        <ul className='nav justify-content-center border-bottom pb-3 mb-3'>
-                            <li className='nav-item'> 
-                                <a href='#' className='nav-link px-2 text-muted'>Home</a>
-                            </li>
-                            <li className='nav-item'> 
-                                <a href='#' className='nav-link px-2 text-muted'>Features</a>
-                            </li>
-                            <li className='nav-item'> 
-                                <a href='#' className='nav-link px-2 text-muted'>FAQs</a>
-                            </li>
-                            <li className='nav-item'> 
-                                <a href='#' className='nav-link px-2 text-muted'>Pricing</a>
-                            </li>
-                        </ul>
-                        <p className='text-center text-muted'>© 2022 Instructional Equity Observation Tool, Inc</p>
-                    </footer>
-                </div>
+                <footer className='py-3 my-4' id='footer'>
+                    <ul className='nav justify-content-center border-bottom pb-3 mb-3'>
+                        <li className='nav-item'>
+                            <a href='#' className='nav-link px-2 text-muted'>Home</a>
+                        </li>
+                        <li className='nav-item'>
+                            <a href='#' className='nav-link px-2 text-muted'>Features</a>
+                        </li>
+                        <li className='nav-item'>
+                            <a href='#' className='nav-link px-2 text-muted'>FAQs</a>
+                        </li>
+                        <li className='nav-item'>
+                            <a href='#' className='nav-link px-2 text-muted'>Pricing</a>
+                        </li>
+                    </ul>
+                    <p className='text-center text-muted'>© 2022 Instructional Equity Observation Tool, Inc</p>
+                </footer>
+            </div>
         </div>
     )
 }
