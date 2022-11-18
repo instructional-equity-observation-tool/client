@@ -22,6 +22,7 @@ function App(){
     const [isSelected, setIsSelected] = useState(false);
     const [isDisabled, setIsDisabled] = useState(false);
     const [labeledQuestions, setLabeledQuestions] = useState("");
+    const [questioningTime, setQuestioningTime] = useState("");
     const endpoint = "http://localhost:5000/upload";
 
     /* useEffect(() => {
@@ -111,14 +112,17 @@ function App(){
     function printTimes(sentences){
         var sStamps = [];
         var speaks = [];
+        var qDur = 0;
         for(let i = 0; i < sentences.length; i++){
             console.log(sentences[i].text.includes("?"));
             if(sentences[i].text.includes("?")){
-
+                qDur += (sentences[i].end - sentences[i].start)
                 sStamps.push(convertMsToTime(sentences[i].start))
                 speaks.push(sentences[i].speaker)
             }
         }
+        it = 0;
+        setQuestioningTime(convertMsToTime(qDur))
         setTimes(sStamps);
         setSpeakers(speaks);
         return sStamps
@@ -151,47 +155,46 @@ function App(){
       function findQuestionsLabels(quests){
             var labeled = [quests.length];
             for(let i = 0; i < quests.length; i++){
-                if(knowledgeArray.some(v => quests[i].text.includes(v))){
+                if(knowledgeArray.some(v => quests[i].text.toLowerCase().includes(v))){
                     if(labeled[i] === undefined){
                         labeled[i] = 'Knowledge';
                     }else{
                         labeled[i] += 'Knowledge';
                     }
-                }else if(analyzeArray.some(v => quests[i].text.includes(v))){
+                }else if(analyzeArray.some(v => quests[i].text.toLowerCase().includes(v))){
                     if(labeled[i] === undefined){
                         labeled[i] = 'Analyze';
                     }else{
                         labeled[i] += 'Analyze';
                     }
-                }else if(applyArray.some(v => quests[i].text.includes(v))){
+                }else if(applyArray.some(v => quests[i].text.toLowerCase().includes(v))){
                     if(labeled[i] === undefined){
                         labeled[i] = 'Apply';
                     }else{
                         labeled[i] += 'Apply';
                     }
-                }else if(createArray.some(v => quests[i].text.includes(v))){
+                }else if(createArray.some(v => quests[i].text.toLowerCase().includes(v))){
                     if(labeled[i] === undefined){
                         labeled[i] = 'Create';
                     }else{
                         labeled[i] += 'Create';
                     }
-                }else if(evaluateArray.some(v => quests[i].text.includes(v))){
+                }else if(evaluateArray.some(v => quests[i].text.toLowerCase().includes(v))){
                     if(labeled[i] === undefined){
                         labeled[i] = 'Evaluate';
                     }else{
                         labeled[i] += 'Evaluate';
                     }
-                }else if(understandArray.some(v => quests[i].text.includes(v))){
+                }else if(understandArray.some(v => quests[i].text.toLowerCase().includes(v))){
                     if(labeled[i] === undefined){
                         labeled[i] = 'Understand';
                     }else{
                         labeled[i] += 'Understand';
                     }
                 }else{
-                    labeled[i] = 'No Label';
+                    labeled[i] = 'Ambiguous';
                 }
             }
-
             setLabeledQuestions(labeled);
             console.log(labeled);
             return labeled;
@@ -284,8 +287,8 @@ function App(){
                                                 <table className='table'>
                                                     <thead>
                                                         <tr>
-                                                            <th scope='col'>Question</th>
                                                             <th scope='col'>Time</th>
+                                                            <th scope='col'>Question</th>
                                                             <th scope='col'>Speaker</th>
                                                             <th scope='col'>Question Type</th>
                                                         </tr>
@@ -293,8 +296,8 @@ function App(){
                                                     <tbody>
                                                         {questions.map((question, index) => 
                                                             <tr>
-                                                                <td>"{question.text}"</td>
                                                                 <td>{times[index]}</td>
+                                                                <td>"{question.text}"</td>
                                                                 <td>{speakers[index]}</td>
                                                                 <td>{labeledQuestions[index]}</td>
                                                             </tr>
@@ -310,9 +313,9 @@ function App(){
                                         </div>
                                         <div className='card-body'>
                                             {times.map((time) => 
-                                            <ul className='nav justify-content-center border-bottom'>
-                                                <li className='nav-item'>"{time}"</li>
-                                            </ul>
+                                                <ul className='nav justify-content-center border-bottom'>
+                                                    <li className='nav-item'>"{time}"</li>
+                                                </ul>
                                             )}
                                         </div>
                                     </div>
@@ -321,7 +324,15 @@ function App(){
                                             <h2>Number of Questions</h2>
                                         </div>
                                         <div className='card-body'>
-                                            {numQuestions}
+                                            <h2>{numQuestions}</h2>
+                                        </div>
+                                    </div>
+                                    <div className='card mb-4 box-shadow'>
+                                        <div className='card-header'>
+                                            <h2>Total Questioning Time</h2>
+                                        </div>
+                                        <div className='card-body'>
+                                            <h2>{questioningTime}</h2>
                                         </div>
                                     </div>
                                     {/* <div className='card mb-4 box-shadow'>

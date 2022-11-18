@@ -28,4 +28,5 @@ export const knowledgeArray = ["define",
     "record",
     "repeat",
     "retell",
-    "visualize"]
+    "visualize",
+    "remember"]

@@ -30,4 +30,5 @@ export const analyzeArray = ["analyze",
     "outline",
     "plan",
     "question",
-    "test"]
+    "test",
+    "difference"]

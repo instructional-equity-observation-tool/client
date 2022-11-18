@@ -38,4 +38,5 @@ export const understandArray = ["explain",
     "review",
     "rewrite",
     "show",
-    "trace"]
+    "trace",
+    "notice"]
