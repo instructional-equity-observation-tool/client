@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Component } from 'react';
 import axios from 'axios';
 import { knowledgeArray } from './knowledge';
 import { understandArray } from './understand';
@@ -11,6 +11,9 @@ import ProgressBar from './progress';
 import { Modal } from 'bootstrap';
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import Chart from 'react-apexcharts'
+
+import ApexChart from './charts';
 
 function App(){
 
@@ -276,6 +279,28 @@ function App(){
         doc.save('demo.pdf')
     }
 
+    //TESTING
+    //APEXCHART STUFF
+    /*
+    ApexChart.state = {
+        options: {
+            chart: {
+                id: 'apexchart-example'
+            },
+            xaxis: {
+                categories: [1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999]
+            }
+        },
+        series: [{
+            name: 'series-1',
+            data: [30, 40, 35, 50, 49, 60, 70, 91, 125]
+        }]
+    }*/
+
+
+
+
+
     //functions pasted from Micah Branch
     function sumSpeakingTime(transcript){
         let totalTime = 0;
@@ -333,6 +358,7 @@ function App(){
             </nav>
 
             <div className='container' id='fileInputGroup'>
+
                 <label className="form-label" htmlFor="customFile">Please Upload a File for Transcription</label>
                 <input type="file" className="form-control" id="customFile" onChange={handleFileChange}/>
                 {isSelected ? (
@@ -446,6 +472,12 @@ function App(){
                                 </div>
                             </div>
                         </div>
+                        {/*Added Apexchart render here*/}
+                        <div>
+                            {/*console.log("Sending labeledQuestions to chart: ")*/}
+                            {/*console.log(labeledQuestions)*/}
+                            <ApexChart questioningTime={questioningTime} labeledQuestions={"hello there"}/>
+                        </div>
 
                         <div>
                             <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">Download PDF</button>
@@ -471,6 +503,10 @@ function App(){
                     <p className='text-center text-muted'>© 2022 Instructional Equity Observation Tool, Inc</p>
                 </footer>
             </div>
+                                        
+
+
+
         </div>
     );
 }
