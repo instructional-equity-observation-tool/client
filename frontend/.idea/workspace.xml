@@ -2,34 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1b7dae10-70d2-42f8-87c0-29b676c55edd" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.idea/senior-design-project-main.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../.vscode/settings.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/.idea/backend.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/.idea/vcs.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-1-1666763734572" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-1-1668452319314" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-10-1668386340982" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-10-1668394551146" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-16-1668408632117" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-17-1668409104946" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-18-1668387145339" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-18-1668395702575" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-18-1668409192906" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-19-1668395825106" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-19-1668409928551" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-2-1668452590830" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-20-1668396111787" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-20-1668411613975" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-21-1668411615930" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-3-1668452602227" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-4-1668453760729" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../backend/public/files/temp/tmp-5-1668453910137" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/analyze.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/analyze.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/knowledge.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/knowledge.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../package-lock.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,16 +25,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "C:/Users/Micah/Desktop/senior-design-project-main/frontend",
-    "nodejs_package_manager_path": "npm"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/Micah/Desktop/senior-design-project-main/frontend&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="npm.start">
     <configuration name="Unnamed" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="ALTERNATIVE_JRE_PATH" value="1.8" />
