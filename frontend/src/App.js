@@ -27,15 +27,22 @@ function App(){
     const [numQuestions, setNumQuestions] = useState("");
     const [isSelected, setIsSelected] = useState(false);
     const [isDisabled, setIsDisabled] = useState(false);
+    const [printed1, setPrinted1] = useState(false);
+    const [printed2, setPrinted2] = useState(false);
     const [labeledQuestions, setLabeledQuestions] = useState("");
     const [questioningTime, setQuestioningTime] = useState("");
+
     const endpoint = "http://localhost:5000/upload";
+
+    //New const, format: {["Teacher", timeInMS],[...]}
+    const [speakerAndTime, setSpeakerAndTime] = useState([]);
 
     /* useEffect(() => {
         setInterval(() => setCompleted(Math.floor(Math.random() * 100) + 1), 2000);
     }, []); */
 
     var it = 0;
+
 
     const modalRef = useRef()
 
@@ -133,6 +140,8 @@ function App(){
         setSpeakers(speaks);
         return sStamps
     }
+
+
 
     function padTo2Digits(num) {
         return num.toString().padStart(2, '0');
@@ -299,7 +308,17 @@ function App(){
 
 
 
+    function setSpeakersAndTimes(sentences){
+        console.log("setSpeakersAndTimes Called");
+        let speakerAndTimeArray = [];
+        let speakerArray = totalSpeakers(transcript);
+        let timeArray = [];
 
+        console.log("speakerArray set to: " + speakerArray);
+        
+        diagnostics();
+        return speakerAndTimeArray;
+    }
 
     //functions pasted from Micah Branch
     function sumSpeakingTime(transcript){
@@ -313,6 +332,7 @@ function App(){
     function totalSpeakers(transcript) {
         let speakerList = [];
         for(let i = 0; i < transcript.length; i++){
+            console.log("Checking for speaker at: " + transcript[i].speaker);
             if(!(speakerList.includes(transcript[i].speaker))){
                 speakerList.push(transcript[i].speaker);
             }
@@ -333,6 +353,39 @@ function App(){
             }
         }
         return speakingTime;
+    }
+
+    //Simple delay function
+    function timeout(delay: number) {
+        return new Promise( res => setTimeout(res, delay) );
+    }
+
+    async function diagnostics(){
+        //double locked to ensure minimal prints
+        if(!printed1){
+            setPrinted1(true);
+            timeout(1000);
+            if(!printed2) {
+                setPrinted2(true);
+                console.log("--------------DIAGNOSTICS----------------")
+                console.log("Printing 'transcript': ");
+                console.log(JSON.stringify(transcript, null, 2));
+                console.log("Printing 'sentences': ");
+                console.log(JSON.stringify(sentences, null, 2));
+                console.log("Printing 'times'");
+                console.log(JSON.stringify(times, null, 2));
+                console.log("Printing 'speakers'");
+                console.log(JSON.stringify(speakers, null, 2));
+                console.log("Printing 'questions'");
+                console.log(JSON.stringify(questions, null, 2));
+                console.log("Printing 'numQuestions'");
+                console.log(JSON.stringify(numQuestions, null, 2));
+                console.log("Printing 'labeledQuestions'");
+                console.log(JSON.stringify(labeledQuestions, null, 2));
+                console.log("Printing 'questioningTime'");
+                console.log(JSON.stringify(questioningTime, null, 2));
+            }
+        }
     }
 
     return(
@@ -475,7 +528,7 @@ function App(){
                         {/*Added Apexchart render here*/}
                         <div>
                             {/*console.log("Sending labeledQuestions to chart: ")*/}
-                            {/*console.log(labeledQuestions)*/}
+                            {setSpeakersAndTimes(sentences)}
                             <ApexChart questioningTime={questioningTime} labeledQuestions={"hello there"}/>
                         </div>
 
@@ -503,7 +556,7 @@ function App(){
                     <p className='text-center text-muted'>© 2022 Instructional Equity Observation Tool, Inc</p>
                 </footer>
             </div>
-                                        
+
 
 
 
