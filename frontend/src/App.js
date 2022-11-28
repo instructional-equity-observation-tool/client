@@ -27,8 +27,6 @@ function App(){
     const [numQuestions, setNumQuestions] = useState("");
     const [isSelected, setIsSelected] = useState(false);
     const [isDisabled, setIsDisabled] = useState(false);
-    const [printed1, setPrinted1] = useState(false);
-    const [printed2, setPrinted2] = useState(false);
     const [labeledQuestions, setLabeledQuestions] = useState("");
     const [questioningTime, setQuestioningTime] = useState("");
 
@@ -242,11 +240,16 @@ function App(){
 
     function generatePDF() {
 
-        console.log("Inputted transcript: " + transcript)
-        console.log("Inputted sentences: ")
-        console.dir(sentences)
-        console.log("Inputted questions: ")
-        console.dir(labeledQuestions)
+        //console.log("Inputted transcript: " + transcript)
+        //console.log("Inputted sentences: ")
+        //console.dir(sentences)
+        //console.log("Inputted questions: ")
+        //console.dir(labeledQuestions)
+
+        console.log("Sending labeledQuestions to chart: ");
+        setSpeakersAndTimes(sentences);
+        diagnostics();
+
         var doc = new jsPDF('p', 'pt', 'letter')
 
         var sentenceArray = new Array();
@@ -316,7 +319,7 @@ function App(){
 
         console.log("speakerArray set to: " + speakerArray);
         
-        diagnostics();
+        
         return speakerAndTimeArray;
     }
 
@@ -355,37 +358,27 @@ function App(){
         return speakingTime;
     }
 
-    //Simple delay function
-    function timeout(delay: number) {
-        return new Promise( res => setTimeout(res, delay) );
-    }
+
 
     async function diagnostics(){
         //double locked to ensure minimal prints
-        if(!printed1){
-            setPrinted1(true);
-            timeout(1000);
-            if(!printed2) {
-                setPrinted2(true);
-                console.log("--------------DIAGNOSTICS----------------")
-                console.log("Printing 'transcript': ");
-                console.log(JSON.stringify(transcript, null, 2));
-                console.log("Printing 'sentences': ");
-                console.log(JSON.stringify(sentences, null, 2));
-                console.log("Printing 'times'");
-                console.log(JSON.stringify(times, null, 2));
-                console.log("Printing 'speakers'");
-                console.log(JSON.stringify(speakers, null, 2));
-                console.log("Printing 'questions'");
-                console.log(JSON.stringify(questions, null, 2));
-                console.log("Printing 'numQuestions'");
-                console.log(JSON.stringify(numQuestions, null, 2));
-                console.log("Printing 'labeledQuestions'");
-                console.log(JSON.stringify(labeledQuestions, null, 2));
-                console.log("Printing 'questioningTime'");
-                console.log(JSON.stringify(questioningTime, null, 2));
-            }
-        }
+        console.log("--------------DIAGNOSTICS----------------")
+        console.log("Printing 'transcript': ");
+        console.log(JSON.stringify(transcript, null, 2));
+        console.log("Printing 'sentences': ");
+        console.log(JSON.stringify(sentences, null, 2));
+        console.log("Printing 'times'");
+        console.log(JSON.stringify(times, null, 2));
+        console.log("Printing 'speakers'");
+        console.log(JSON.stringify(speakers, null, 2));
+        console.log("Printing 'questions'");
+        console.log(JSON.stringify(questions, null, 2));
+        console.log("Printing 'numQuestions'");
+        console.log(JSON.stringify(numQuestions, null, 2));
+        console.log("Printing 'labeledQuestions'");
+        console.log(JSON.stringify(labeledQuestions, null, 2));
+        console.log("Printing 'questioningTime'");
+        console.log(JSON.stringify(questioningTime, null, 2));
     }
 
     return(
@@ -527,8 +520,7 @@ function App(){
                         </div>
                         {/*Added Apexchart render here*/}
                         <div>
-                            {/*console.log("Sending labeledQuestions to chart: ")*/}
-                            {setSpeakersAndTimes(sentences)}
+                            
                             <ApexChart questioningTime={questioningTime} labeledQuestions={"hello there"}/>
                         </div>
 

@@ -8,11 +8,11 @@ class ApexChart extends React.Component {
         super(props);
 
         //gets props: questioningTime and labledQuestions
-        console.log("Got to Apex Chart File");
-        console.log("Inputted questioningTime: ");
-        console.log(props.questioningTime);
-        console.log("Inputted labledQuestions: ");
-        console.log(props.labledQuestions);
+        //console.log("Got to Apex Chart File");
+        //console.log("Inputted questioningTime: ");
+        //console.log(props.questioningTime);
+        //console.log("Inputted labledQuestions: ");
+        //console.log(props.labledQuestions);
 
         this.state = {
 
