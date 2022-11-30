@@ -383,7 +383,7 @@ function App() {
             Submit
           </button>
           <div className="addEmployee">
-            <div className="modal fade" ref={modalRef} tabIndex="-1">
+            <div className="modal fade" ref={modalRef} tabIndex="-1" style={{ marginTop: "115px" }}>
               <div className="modal-dialog">
                 <div className="modal-content">
                   <div className="modal-header">
@@ -395,6 +395,18 @@ function App() {
                     <div>
                       <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
                     </div>
+                    <button
+                      onClick={() => window.location.reload(false)}
+                      style={{
+                        backgroundColor: "dodgerblue",
+                        color: "white",
+                        padding: "5px 15px",
+                        borderRadius: "5px",
+                        border: "0",
+                      }}
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
               </div>
