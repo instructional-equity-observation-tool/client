@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Component } from "react";
 import axios from "axios";
 import { knowledgeArray } from "./knowledge";
 import { understandArray } from "./understand";
@@ -12,6 +12,8 @@ import { Modal } from "bootstrap";
 import Dropdown from "react-bootstrap/Dropdown";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Chart from "react-apexcharts";
+import MyCharts from "./charts";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState();
@@ -26,8 +28,12 @@ function App() {
   const [isDisabled, setIsDisabled] = useState(false);
   const [labeledQuestions, setLabeledQuestions] = useState("");
   const [questioningTime, setQuestioningTime] = useState("");
+
   const endpoint = "http://localhost:5000/upload";
   console.log("labeledQuestions: ", labeledQuestions);
+
+  //New const, format: {["Teacher", timeInMS],[...]}
+  const [speakerAndTime, setSpeakerAndTime] = useState([]);
 
   /* useEffect(() => {
         setInterval(() => setCompleted(Math.floor(Math.random() * 100) + 1), 2000);
@@ -226,11 +232,12 @@ function App() {
   }
 
   function generatePDF() {
-    console.log("Input transcript: " + transcript);
-    console.log("Input sentences: ");
-    console.dir(sentences);
-    console.log("Input questions: ");
-    console.dir(labeledQuestions);
+    diagnostics();
+
+    console.log("Sending labeledQuestions to chart: ");
+    setSpeakersAndTimes(sentences);
+    diagnostics();
+
     var doc = new jsPDF("p", "pt", "letter");
 
     var sentenceArray = new Array();
@@ -245,9 +252,9 @@ function App() {
 
     var questionArray = new Array();
     for (let i = 0; i < questions.length; i++) {
-      console.log("labeledQuestions " + i + ": " + labeledQuestions[i]);
+      //console.log("labeledQuestions " + i + ": " + labeledQuestions[i]);
       questionArray[i] = new Array(questions[i].text, labeledQuestions[i]);
-      console.log("questionArray " + i + ": " + questionArray[i]);
+      //console.log("questionArray " + i + ": " + questionArray[i]);
     }
 
     //var speakTimeArray = new Array();
@@ -273,43 +280,90 @@ function App() {
       theme: "grid",
     });
 
-    doc.save("report.pdf");
+    doc.save("demo.pdf");
+  }
+
+  function setSpeakersAndTimes(sentences) {
+    //console.log("setSpeakersAndTimes Called");
+    let speakerAndTimeArray = [];
+    let speakerArray = totalSpeakers(transcript);
+    let timeArray = [];
+
+    //console.log("speakerArray set to: " + speakerArray);
+
+    return speakerAndTimeArray;
   }
 
   //functions pasted from Micah Branch
-  function sumSpeakingTime(transcript) {
+  function sumSpeakingTime(sentences) {
     let totalTime = 0;
-    for (let i = 0; i < transcript.length; i++) {
-      totalTime += transcript[i].end - transcript[i].start;
+    for (let i = 0; i < sentences.length; i++) {
+      totalTime += sentences[i].end - sentences[i].start;
     }
     return totalTime;
   }
 
-  function totalSpeakers(transcript) {
+  function totalSpeakers(sentences) {
     let speakerList = [];
-    for (let i = 0; i < transcript.length; i++) {
-      if (!speakerList.includes(transcript[i].speaker)) {
-        speakerList.push(transcript[i].speaker);
+    for (let i = 0; i < sentences.length; i++) {
+      if (!speakerList.includes(sentences[i].speaker)) {
+        speakerList.push(sentences[i].speaker);
       }
     }
-    console.log("Speakers Detected: ");
-    for (let i = 0; i < speakerList.length; i++) {
-      console.log(speakerList[i]);
-    }
-    console.log("Total Speakers: " + speakerList.length);
+    //console.log("Speakers Detected: ");
+    //for (let i = 0; i < speakerList.length; i++) {
+    //console.log(speakerList[i]);
+    //}
+    //console.log("Total Speakers: " + speakerList.length);
     return speakerList;
   }
 
+  function speakingTimeList() {
+    let speakingTimeList = [];
+    let speakerList = totalSpeakers(sentences);
+
+    for (let i = 0; i < speakerList.length; i++) {
+      speakingTimeList.push(getSpeakingTime(speakerList[i]));
+    }
+
+    //console.log("Speaking Time List: " + speakingTimeList);
+    return speakingTimeList;
+  }
+
   function getSpeakingTime(speakerName) {
+    //console.log("Get Speaking Time Called");
     let speakingTime = 0;
-    for (let i = 0; i < transcript.length; i++) {
-      if (transcript[i].speaker === speakerName) {
-        speakingTime += transcript[i].end - transcript[i].start;
+    for (let i = 0; i < sentences.length; i++) {
+      if (sentences[i].speaker === speakerName) {
+        speakingTime += sentences[i].end - sentences[i].start;
       }
     }
+    //console.log(JSON.stringify(sentences, null, 2));
+    //console.log("SpeakerList: " + totalSpeakers(sentences));
+    //console.log("Speaking time of speaker " + speakerName + " is: " + speakingTime);
     return speakingTime;
   }
 
+  async function diagnostics() {
+    //double locked to ensure minimal prints
+    console.log("--------------DIAGNOSTICS----------------");
+    console.log("Printing 'transcript': ");
+    console.log(JSON.stringify(transcript, null, 2));
+    console.log("Printing 'sentences': ");
+    console.log(JSON.stringify(sentences, null, 2));
+    console.log("Printing 'times'");
+    console.log(JSON.stringify(times, null, 2));
+    console.log("Printing 'speakers'");
+    console.log(JSON.stringify(speakers, null, 2));
+    console.log("Printing 'questions'");
+    console.log(JSON.stringify(questions, null, 2));
+    console.log("Printing 'numQuestions'");
+    console.log(JSON.stringify(numQuestions, null, 2));
+    console.log("Printing 'labeledQuestions'");
+    console.log(JSON.stringify(labeledQuestions, null, 2));
+    console.log("Printing 'questioningTime'");
+    console.log(JSON.stringify(questioningTime, null, 2));
+  }
   function removeQuestion(idx) {
     let newQuestions = [...questions];
     newQuestions.splice(idx, 1);
@@ -321,6 +375,157 @@ function App() {
     newLabeledQuestions[index] = label;
     setLabeledQuestions(newLabeledQuestions);
   }
+
+  function getAmountOfLabel(label) {
+    let amount = 0;
+    for (let i = 0; i < labeledQuestions.length; i++) {
+      if (labeledQuestions[i] == label) {
+        amount++;
+      }
+    }
+    return amount;
+  }
+
+  function getMaxSpeaker() {
+    let speakTimeList1 = totalSpeakers(sentences);
+    let maxSpeakerName = "";
+    let maxSpeakerDuration = 0;
+    let tempSpeaker = 0;
+    for (let i = 0; i < speakTimeList1.length; i++) {
+      tempSpeaker = getSpeakingTime(speakTimeList1[i]);
+      console.log("temp speaking time: " + tempSpeaker);
+      if (tempSpeaker > maxSpeakerDuration) {
+        maxSpeakerDuration = tempSpeaker;
+        maxSpeakerName = speakTimeList1[i];
+      }
+    }
+    console.log("maxSpeaker: " + maxSpeakerName);
+    return maxSpeakerName;
+  }
+
+  function timeObj(x, y) {
+    this.x = x;
+    this.y = y;
+    return this;
+  }
+
+  function setTimeChartData() {
+    if (sentences) {
+      let data = [];
+      for (let i = 0; i < sentences.length; i++) {
+        let timeListObj = new timeObj(sentences[i].speaker, [
+          sentences[i].start / 1000,
+          sentences[i].end / 1000,
+        ]);
+        data.push(timeListObj);
+      }
+      return data;
+    }
+  }
+
+  const timeChartProps = {
+    series: [
+      {
+        data: setTimeChartData(),
+      },
+    ],
+    options: {
+      chart: {
+        type: "rangeBar",
+      },
+      title: {
+        text: "Speaking Timeline",
+        align: "left",
+        style: {
+          fontSize: "30px",
+          fontWeight: "bold",
+          fontFamily: undefined,
+          color: "#263238",
+        },
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true,
+        },
+      },
+      xaxis: {
+        type: "numeric",
+      },
+    },
+  };
+
+  const barChartProps = {
+    options: {
+      title: {
+        text: "Question Category Distribution",
+        align: "left",
+        style: {
+          fontSize: "30px",
+          fontWeight: "bold",
+          fontFamily: undefined,
+          color: "#263238",
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: "28px",
+          fontFamily: "Helvetica, Arial, sans-serif",
+          fontWeight: "bold",
+        },
+      },
+      xaxis: {
+        labels: {
+          style: {
+            fontSize: "20px",
+          },
+        },
+        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"],
+      },
+    },
+    series: [
+      {
+        data: [
+          getAmountOfLabel("Knowledge"),
+          getAmountOfLabel("Understand"),
+          getAmountOfLabel("Apply"),
+          getAmountOfLabel("Analyze"),
+          getAmountOfLabel("Evaluate"),
+          getAmountOfLabel("Create"),
+        ],
+      },
+    ],
+  };
+
+  const pieChartProps = {
+    options: {
+      title: {
+        text: "Talking Distribution",
+        align: "left",
+        style: {
+          fontSize: "30px",
+          fontWeight: "bold",
+          fontFamily: undefined,
+          color: "#263238",
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: "28px",
+          fontFamily: "Helvetica, Arial, sans-serif",
+          fontWeight: "bold",
+        },
+      },
+      labels: ["Teacher", "Students", "Non-Speaking"],
+    },
+    //series: [...speakingTimeList()],
+    series: [
+      getSpeakingTime(getMaxSpeaker()),
+      sumSpeakingTime(sentences) - getSpeakingTime(getMaxSpeaker()),
+      getSpeakingTime("B"),
+    ],
+  };
 
   return (
     <div>
@@ -419,19 +624,8 @@ function App() {
               <h1>Full Transcript</h1>
               <p className="lead">{transcript}</p>
             </div>
+
             <div className="card-deck mb-3 text-center">
-              <div className="card mb-4 box-shadow">
-                <div className="card-header">
-                  <h2>Sentences</h2>
-                </div>
-                <div className="card-body">
-                  {sentences.map((sentence) => (
-                    <ul className="nav justify-content-center border-bottom">
-                      <li className="nav-item">"{sentence.text}"</li>
-                    </ul>
-                  ))}
-                </div>
-              </div>
               <div className="card mb-4 box-shadow">
                 <div className="card-header">
                   <h2>Questions</h2>
@@ -518,18 +712,6 @@ function App() {
               </div>
               <div className="card mb-4 box-shadow">
                 <div className="card-header">
-                  <h2>Question Timestamps</h2>
-                </div>
-                <div className="card-body">
-                  {times.map((time) => (
-                    <ul className="nav justify-content-center border-bottom">
-                      <li className="nav-item">"{time}"</li>
-                    </ul>
-                  ))}
-                </div>
-              </div>
-              <div className="card mb-4 box-shadow">
-                <div className="card-header">
                   <h2>Number of Questions</h2>
                 </div>
                 <div className="card-body">
@@ -543,6 +725,38 @@ function App() {
                 <div className="card-body">
                   <h2>{questioningTime}</h2>
                 </div>
+              </div>
+              <div>
+                <tr>
+                  <td>
+                    <Chart
+                      options={barChartProps.options}
+                      series={barChartProps.series}
+                      type="bar"
+                      width="650"
+                    />
+                  </td>
+                  <td>
+                    <Chart
+                      options={pieChartProps.options}
+                      series={pieChartProps.series}
+                      type="pie"
+                      width="650"
+                    />
+                  </td>
+                </tr>
+                <br></br>
+                {/* <tr>
+                  <td>
+                    <Chart
+                      options={timeChartProps.options}
+                      series={timeChartProps.series}
+                      type="rangeBar"
+                      height={600}
+                      width={1300}
+                    />
+                  </td>
+                </tr> */}
               </div>
             </div>
 
