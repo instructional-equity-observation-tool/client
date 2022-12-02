@@ -376,7 +376,20 @@ function getAmountOfLabel(label) {
 
 const barChartProps = {
   options: {
+    dataLabels: {
+      enabled: true,
+      style: {
+        fontSize: "28px",
+        fontFamily: "Helvetica, Arial, sans-serif",
+        fontWeight: "bold"
+      }
+    },
     xaxis: {
+      labels: {
+        style: {
+            fontSize: '20px'
+        }
+      },
       categories: ["Knowledge","Understand","Progress","Evaluate","Create","Apply","Analyze"]
     }
   },
@@ -387,9 +400,18 @@ const barChartProps = {
 
 const pieChartProps = {
   options: {
+    dataLabels: {
+      enabled: true,
+      style: {
+        fontSize: "28px",
+        fontFamily: "Helvetica, Arial, sans-serif",
+        fontWeight: "bold"
+      }
+    },
     labels: ["Teacher", "Student", "Non-Speaking"]
   },
   series: [89,49,58],
+
 }
 
 return (
@@ -620,13 +642,13 @@ return (
                   options={barChartProps.options}
                   series={barChartProps.series}
                   type="bar"
-                  width="600"
+                  width="650"
                   /></td>
                   <td><Chart
                   options={pieChartProps.options}
                   series={pieChartProps.series}
                   type="pie"
-                  width="600"
+                  width="650"
                   /></td>
               </tr>
             </div>
