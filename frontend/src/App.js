@@ -363,7 +363,34 @@ function selectLabel(index, label) {
   setLabeledQuestions(newLabeledQuestions);
 }
 
-let propQuestionTime = "00:00:14";
+function getAmountOfLabel(label) {
+  let amount = 0;
+  for(let i = 0; i < labeledQuestions.length; i++){
+    if(labeledQuestions[i] == label){
+      amount++;
+    }
+  }
+  return amount;
+}
+
+
+const barChartProps = {
+  options: {
+    xaxis: {
+      categories: ["Knowledge","Understand","Progress","Evaluate","Create","Apply","Analyze"]
+    }
+  },
+  series: [{
+    data: [getAmountOfLabel("Knowledge"), getAmountOfLabel("Understand"), getAmountOfLabel("Progress"), getAmountOfLabel("Evaluate"), getAmountOfLabel("Create"), getAmountOfLabel("Apply"), getAmountOfLabel("Analyze")]
+  }],
+}
+
+const pieChartProps = {
+  options: {
+    labels: ["Teacher", "Student", "Non-Speaking"]
+  },
+  series: [89,49,58],
+}
 
 return (
   <div>
@@ -588,7 +615,20 @@ return (
               </div>
             </div>
             <div>
-                <MyCharts {...propQuestionTime} />
+              <tr>
+                  <td><Chart
+                  options={barChartProps.options}
+                  series={barChartProps.series}
+                  type="bar"
+                  width="600"
+                  /></td>
+                  <td><Chart
+                  options={pieChartProps.options}
+                  series={pieChartProps.series}
+                  type="pie"
+                  width="600"
+                  /></td>
+              </tr>
             </div>
           </div>
 
