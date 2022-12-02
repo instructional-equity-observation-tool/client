@@ -12,9 +12,8 @@ import { Modal } from "bootstrap";
 import Dropdown from "react-bootstrap/Dropdown";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import Chart from 'react-apexcharts'
-
-import ApexChart from './charts';
+import Chart from "react-apexcharts";
+import MyCharts from './charts';
 
 function App() {
   const [selectedFile, setSelectedFile] = useState();
@@ -235,17 +234,13 @@ function App() {
 
     function generatePDF() {
 
-        //console.log("Inputted transcript: " + transcript)
-        //console.log("Inputted sentences: ")
-        //console.dir(sentences)
-        //console.log("Inputted questions: ")
-        //console.dir(labeledQuestions)
+    diagnostics();
 
-        console.log("Sending labeledQuestions to chart: ");
-        setSpeakersAndTimes(sentences);
-        diagnostics();
+    console.log("Sending labeledQuestions to chart: ");
+    setSpeakersAndTimes(sentences);
+    diagnostics();
 
-        var doc = new jsPDF('p', 'pt', 'letter')
+    var doc = new jsPDF('p', 'pt', 'letter')
 
     var sentenceArray = new Array();
     for (let i = 0; i < sentences.length; i++) {
@@ -289,26 +284,6 @@ function App() {
 
         doc.save('demo.pdf')
     }
-
-    //TESTING
-    //APEXCHART STUFF
-    /*
-    ApexChart.state = {
-        options: {
-            chart: {
-                id: 'apexchart-example'
-            },
-            xaxis: {
-                categories: [1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999]
-            }
-        },
-        series: [{
-            name: 'series-1',
-            data: [30, 40, 35, 50, 49, 60, 70, 91, 125]
-        }]
-    }*/
-
-
 
     function setSpeakersAndTimes(sentences){
         console.log("setSpeakersAndTimes Called");
@@ -376,258 +351,285 @@ function App() {
     console.log("Printing 'questioningTime'");
     console.log(JSON.stringify(questioningTime, null, 2));
 }
-  function removeQuestion(idx) {
-    let newQuestions = [...questions];
-    newQuestions.splice(idx, 1);
-    setQuestions(newQuestions);
-  }
+function removeQuestion(idx) {
+  let newQuestions = [...questions];
+  newQuestions.splice(idx, 1);
+  setQuestions(newQuestions);
+}
 
-  function selectLabel(index, label) {
-    let newLabeledQuestions = [...labeledQuestions];
-    newLabeledQuestions[index] = label;
-    setLabeledQuestions(newLabeledQuestions);
-  }
+function selectLabel(index, label) {
+  let newLabeledQuestions = [...labeledQuestions];
+  newLabeledQuestions[index] = label;
+  setLabeledQuestions(newLabeledQuestions);
+}
 
-    return(
-      <div>
+let propQuestionTime = "00:00:14";
+
+return (
+  <div>
+    <nav className="navbar navbar-expand-lg bg-dark">
+      <a className="navbar-brand" href="#">
+        <img
+          src="https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/2628.png"
+          className="tcu-image"
+          width="80"
+          height="80"
+          alt=""
+        />
+      </a>
+
+      <div className="collapse navbar-collapse justify-content-end" id="navbarCollapse">
+        <ul className="navbar-nav">
+          <li className="nav-item">
+            <a className="nav-link text-light" href="#">
+              About Us
+            </a>
+          </li>
+          <li className="nav-item">
+            <a className="nav-link text-light" href="#">
+              IEOT
+            </a>
+          </li>
+          <li className="nav-item">
+            <a className="nav-link text-light" href="#">
+              Contact Us
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <div className="container" id="fileInputGroup">
+      <label className="form-label" htmlFor="customFile">
+        Please Upload a File for Transcription
+      </label>
+      <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
+      {isSelected ? (
         <div>
-            <nav className="navbar navbar-expand-lg bg-dark">
-                <a className="navbar-brand" href="#">
-                    <img src="https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/2628.png" className="tcu-image" width="80" height="80" alt=""/>
-                </a>
-
-        <div className="collapse navbar-collapse justify-content-end" id="navbarCollapse">
-          <ul className="navbar-nav">
-            <li className="nav-item">
-              <a className="nav-link text-light" href="#">
-                About Us
-              </a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link text-light" href="#">
-                IEOT
-              </a>
-            </li>
-            <li className="nav-item">
-              <a className="nav-link text-light" href="#">
-                Contact Us
-              </a>
-            </li>
-          </ul>
+          <p>Filename: {selectedFile.name}</p>
+          <p>Filetype: {selectedFile.type}</p>
+          <p>Size in bytes: {selectedFile.size}</p>
+          <p>lastModifiedDate: {selectedFile.lastModifiedDate.toLocaleDateString()}</p>
         </div>
-          </nav>
-
-            <div className='container' id='fileInputGroup'>
-                <label className="form-label" htmlFor="customFile">Please Upload a File for Transcription</label>
-                <input type="file" className="form-control" id="customFile" onChange={handleFileChange}/>
-                {isSelected ? (
-                    <div>
-                        <p>Filename: {selectedFile.name}</p>
-                        <p>Filetype: {selectedFile.type}</p>
-                        <p>Size in bytes: {selectedFile.size}</p>
-                        <p>
-                            lastModifiedDate:{' '}
-                            {selectedFile.lastModifiedDate.toLocaleDateString()}
-                        </p>
-                    </div>
-                ) : (
-                    <p>Select a file to show details</p>
-                )}
-                <div>
-                    <button type="button" className="btn btn-primary" disabled={isDisabled} data-bs-toggle="modal" data-bs-target="#progressModal" onClick={handleSubmission}>Submit</button>
-                    <div className="addEmployee">
-                        <div className="modal fade" ref={modalRef} tabIndex="-1" >
-                            <div className="modal-dialog">
-                                <div className="modal-content">
-                                    <div className="modal-header">
-                                        <h5 className="modal-title" id="staticBackdropLabel">Analyzing</h5>
-                                    </div>
-                                    <div className="modal-body">
-                                        <div>
-                                            <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <button
-                      onClick={() => window.location.reload(false)}
-                      style={{
-                        backgroundColor: "dodgerblue",
-                        color: "white",
-                        padding: "5px 15px",
-                        borderRadius: "5px",
-                        border: "0",
-                      }}
-                    >
-                      Cancel
-                    </button>
+      ) : (
+        <p>Select a file to show details</p>
+      )}
+      <div>
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={isDisabled}
+          data-bs-toggle="modal"
+          data-bs-target="#progressModal"
+          onClick={handleSubmission}
+        >
+          Submit
+        </button>
+        <div className="addEmployee">
+          <div className="modal fade" ref={modalRef} tabIndex="-1" style={{ marginTop: "115px" }}>
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title" id="staticBackdropLabel">
+                    Analyzing
+                  </h5>
+                </div>
+                <div className="modal-body">
+                  <div>
+                    <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
                   </div>
-                </div>
-
-        {sentences ? (
-          <div>
-            <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
-              <h1>Full Transcript</h1>
-              <p className="lead">{transcript}</p>
-            </div>
-            <div className="card-deck mb-3 text-center">
-              <div className="card mb-4 box-shadow">
-                <div className="card-header">
-                  <h2>Sentences</h2>
-                </div>
-                <div className="card-body">
-                  {sentences.map((sentence) => (
-                    <ul className="nav justify-content-center border-bottom">
-                      <li className="nav-item">"{sentence.text}"</li>
-                    </ul>
-                  ))}
+                  <button
+                    onClick={() => window.location.reload(false)}
+                    style={{
+                      backgroundColor: "dodgerblue",
+                      color: "white",
+                      padding: "5px 15px",
+                      borderRadius: "5px",
+                      border: "0",
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
-              <div className="card mb-4 box-shadow">
-                <div className="card-header">
-                  <h2>Questions</h2>
-                </div>
-                <div className="card-body">
-                  <div className="container">
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th scope="col">Time</th>
-                          <th scope="col">Question</th>
-                          <th scope="col">Speaker</th>
-                          <th scope="col">Question Type</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {questions.map((question, index) => (
-                          <tr>
-                            <td>{times[index]}</td>
-                            <td>"{question.text}"</td>
-                            <td>{speakers[index]}</td>
-                            <td>{labeledQuestions[index]}</td>
-                            <td>
-                              <Dropdown>
-                                <Dropdown.Toggle variant="sm" id="dropdown-basic">
-                                  Select Type
-                                </Dropdown.Toggle>
-
-                                <Dropdown.Menu>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Knowledge");
-                                    }}
-                                  >
-                                    Knowledge
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Understand");
-                                    }}
-                                  >
-                                    Understand
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Apply");
-                                    }}
-                                  >
-                                    Apply
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Analyze");
-                                    }}
-                                  >
-                                    Analyze
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Evaluate");
-                                    }}
-                                  >
-                                    Evaluate
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Create");
-                                    }}
-                                  >
-                                    Create
-                                  </Dropdown.Item>
-                                </Dropdown.Menu>
-                              </Dropdown>
-                            </td>
-                            <td>
-                              <button onClick={() => removeQuestion(index)}>Remove</button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-              <div className="card mb-4 box-shadow">
-                <div className="card-header">
-                  <h2>Question Timestamps</h2>
-                </div>
-                <div className="card-body">
-                  {times.map((time) => (
-                    <ul className="nav justify-content-center border-bottom">
-                      <li className="nav-item">"{time}"</li>
-                    </ul>
-                  ))}
-                </div>
-              </div>
-              <div className="card mb-4 box-shadow">
-                <div className="card-header">
-                  <h2>Number of Questions</h2>
-                </div>
-                <div className="card-body">
-                  <h2>{numQuestions}</h2>
-                </div>
-              </div>
-              <div className="card mb-4 box-shadow">
-                <div className="card-header">
-                  <h2>Total Questioning Time</h2>
-                </div>
-                <div className="card-body">
-                  <h2>{questioningTime}</h2>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
-                Download PDF
-              </button>
             </div>
           </div>
-        ) : null}
-
-                <footer className='py-3 my-4' id='footer'>
-                    <ul className='nav justify-content-center border-bottom pb-3 mb-3'>
-                        <li className='nav-item'>
-                            <a href='#' className='nav-link px-2 text-muted'>Home</a>
-                        </li>
-                        <li className='nav-item'>
-                            <a href='#' className='nav-link px-2 text-muted'>Features</a>
-                        </li>
-                        <li className='nav-item'>
-                            <a href='#' className='nav-link px-2 text-muted'>FAQs</a>
-                        </li>
-                        <li className='nav-item'>
-                            <a href='#' className='nav-link px-2 text-muted'>Pricing</a>
-                        </li>
-                    </ul>
-                    <p className='text-center text-muted'>© 2022 Instructional Equity Observation Tool, Inc</p>
-                </footer>
-            </div>
         </div>
-      
-    );
+      </div>
+      {sentences ? (
+        <div>
+          <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+            <h1>Full Transcript</h1>
+            <p className="lead">{transcript}</p>
+          </div>
+          <div className="card-deck mb-3 text-center">
+            <div className="card mb-4 box-shadow">
+              <div className="card-header">
+                <h2>Sentences</h2>
+              </div>
+              <div className="card-body">
+                {sentences.map((sentence) => (
+                  <ul className="nav justify-content-center border-bottom">
+                    <li className="nav-item">"{sentence.text}"</li>
+                  </ul>
+                ))}
+              </div>
+            </div>
+            <div className="card mb-4 box-shadow">
+              <div className="card-header">
+                <h2>Questions</h2>
+              </div>
+              <div className="card-body">
+                <div className="container">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Time</th>
+                        <th scope="col">Question</th>
+                        <th scope="col">Speaker</th>
+                        <th scope="col">Question Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {questions.map((question, index) => (
+                        <tr>
+                          <td>{times[index]}</td>
+                          <td>"{question.text}"</td>
+                          <td>{speakers[index]}</td>
+                          <td>{labeledQuestions[index]}</td>
+                          <td>
+                            <Dropdown>
+                              <Dropdown.Toggle variant="sm" id="dropdown-basic">
+                                Select Type
+                              </Dropdown.Toggle>
+
+                              <Dropdown.Menu>
+                                <Dropdown.Item
+                                  onClick={() => {
+                                    selectLabel(index, "Knowledge");
+                                  }}
+                                >
+                                  Knowledge
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => {
+                                    selectLabel(index, "Understand");
+                                  }}
+                                >
+                                  Understand
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => {
+                                    selectLabel(index, "Apply");
+                                  }}
+                                >
+                                  Apply
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => {
+                                    selectLabel(index, "Analyze");
+                                  }}
+                                >
+                                  Analyze
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => {
+                                    selectLabel(index, "Evaluate");
+                                  }}
+                                >
+                                  Evaluate
+                                </Dropdown.Item>
+                                <Dropdown.Item
+                                  onClick={() => {
+                                    selectLabel(index, "Create");
+                                  }}
+                                >
+                                  Create
+                                </Dropdown.Item>
+                              </Dropdown.Menu>
+                            </Dropdown>
+                          </td>
+                          <td>
+                            <button onClick={() => removeQuestion(index)}>Remove</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div className="card mb-4 box-shadow">
+              <div className="card-header">
+                <h2>Question Timestamps</h2>
+              </div>
+              <div className="card-body">
+                {times.map((time) => (
+                  <ul className="nav justify-content-center border-bottom">
+                    <li className="nav-item">"{time}"</li>
+                  </ul>
+                ))}
+              </div>
+            </div>
+            <div className="card mb-4 box-shadow">
+              <div className="card-header">
+                <h2>Number of Questions</h2>
+              </div>
+              <div className="card-body">
+                <h2>{numQuestions}</h2>
+              </div>
+            </div>
+            <div className="card mb-4 box-shadow">
+              <div className="card-header">
+                <h2>Total Questioning Time</h2>
+              </div>
+              <div className="card-body">
+                <h2>{questioningTime}</h2>
+              </div>
+            </div>
+            <div>
+                <MyCharts {...propQuestionTime} />
+            </div>
+          </div>
+
+          <div>
+            <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
+              Download PDF
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <footer className="py-3 my-4" id="footer">
+        <ul className="nav justify-content-center border-bottom pb-3 mb-3">
+          <li className="nav-item">
+            <a href="#" className="nav-link px-2 text-muted">
+              Home
+            </a>
+          </li>
+          <li className="nav-item">
+            <a href="#" className="nav-link px-2 text-muted">
+              Features
+            </a>
+          </li>
+          <li className="nav-item">
+            <a href="#" className="nav-link px-2 text-muted">
+              FAQs
+            </a>
+          </li>
+          <li className="nav-item">
+            <a href="#" className="nav-link px-2 text-muted">
+              Pricing
+            </a>
+          </li>
+        </ul>
+        <p className="text-center text-muted">
+          © 2022 Instructional Equity Observation Tool, Inc
+        </p>
+      </footer>
+    </div>
+  </div>
+);
 }
 
 export default App;
