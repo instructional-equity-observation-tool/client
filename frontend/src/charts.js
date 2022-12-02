@@ -3,49 +3,39 @@ import Chart from 'react-apexcharts'
 import ReactApexChart from "react-apexcharts";
 import convertMsToTime from './App'
 
-class ApexChart extends React.Component {
-    constructor(props) {
-        super(props);
+const MyCharts = ({prop1}) => {
 
-        //gets props: questioningTime and labledQuestions
-        //console.log("Got to Apex Chart File");
-        //console.log("Inputted questioningTime: ");
-        //console.log(props.questioningTime);
-        //console.log("Inputted labledQuestions: ");
-        //console.log(props.labledQuestions);
 
-        this.state = {
+    //testing to see if prop passed
+    let thing1 = prop1;
 
-            series: [props.questioningTime],
-            options: {
-                chart: {
-                    width: 380,
-                    type: 'pie',
-                },
-                labels: ['Team A'],
-                    responsive: [{
-                    breakpoint: 480,
-                        options: {
-                            chart: {
-                            width: 200
-                        },
-                        legend: {
-                            position: 'bottom'
-                            }
-                        }
-                    }]
-            },
-        };
+    console.log("Recieved thing 1: " + thing1);
+
+
+    //sample data for bar chart
+  const series = [ //data on the y-axis
+    {
+      name: "Temperature in Celsius",
+      data: ["1","2"]
     }
-
-
-    render() {
-      return (
-            <div id="chart">
-                <ReactApexChart options={this.state.options} series={this.state.series} type="pie" width={380} />
-            </div>
-        );
+  ];
+  const options = { //data on the x-axis
+    chart: { id: 'bar-chart'},
+    xaxis: {
+      categories: ["Category 1", "Category 2"]
     }
+  };
+
+  return (
+    <div>
+      <Chart
+        options={options}
+        series={series}
+        type="bar"
+        width="450"
+      />
+    </div>
+  )
 }
 
-export default ApexChart;
+export default MyCharts;
