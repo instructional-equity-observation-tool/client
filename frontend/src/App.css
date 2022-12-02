@@ -35,3 +35,9 @@ body{
 .navbar-nav{
     padding-right: 30px;
 }
+
+.lead {
+    height: 300px;
+    overflow: auto;
+    border: 0.5px solid black;
+}
