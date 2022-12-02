@@ -232,7 +232,7 @@ function App() {
     return labeled;
   }
 
-    function generatePDF() {
+  function generatePDF() {
 
     diagnostics();
 
@@ -282,30 +282,30 @@ function App() {
       theme: "grid",
     });
 
-        doc.save('demo.pdf')
-    }
+    doc.save('demo.pdf')
+  }
 
-    function setSpeakersAndTimes(sentences){
-        console.log("setSpeakersAndTimes Called");
-        let speakerAndTimeArray = [];
-        let speakerArray = totalSpeakers(transcript);
-        let timeArray = [];
+  function setSpeakersAndTimes(sentences){
+    //console.log("setSpeakersAndTimes Called");
+    let speakerAndTimeArray = [];
+    let speakerArray = totalSpeakers(transcript);
+    let timeArray = [];
 
-        console.log("speakerArray set to: " + speakerArray);
-        
-        
-        return speakerAndTimeArray;
-    }
+    //console.log("speakerArray set to: " + speakerArray);
+    
+    
+    return speakerAndTimeArray;
+  }
 
-    //functions pasted from Micah Branch
-    function sumSpeakingTime(sentences){
-        let totalTime = 0;
-        for(let i = 0; i < sentences.length; i++){
-            totalTime += (sentences[i].end - sentences[i].start);
-        }
-        return totalTime
+  //functions pasted from Micah Branch
+  function sumSpeakingTime(sentences){
+    let totalTime = 0;
+    for(let i = 0; i < sentences.length; i++){
+        totalTime += (sentences[i].end - sentences[i].start);
     }
-  
+    return totalTime
+  }
+
   function totalSpeakers(sentences) {
     let speakerList = [];
     for (let i = 0; i < sentences.length; i++) {
@@ -313,11 +313,11 @@ function App() {
         speakerList.push(sentences[i].speaker);
       }
     }
-    console.log("Speakers Detected: ");
-    for (let i = 0; i < speakerList.length; i++) {
-      console.log(speakerList[i]);
-    }
-    console.log("Total Speakers: " + speakerList.length);
+    //console.log("Speakers Detected: ");
+    //for (let i = 0; i < speakerList.length; i++) {
+      //console.log(speakerList[i]);
+    //}
+    //console.log("Total Speakers: " + speakerList.length);
     return speakerList;
   }
 
@@ -325,16 +325,16 @@ function App() {
     let speakingTimeList = [];
     let speakerList = totalSpeakers(sentences);
 
-    for (let i = 0; i < speakerList.length; i++){
+    for (let i = 0; i < speakerList.length; i++) {
       speakingTimeList.push(getSpeakingTime(speakerList[i]));
     }
 
-    console.log("Speaking Time List: " + speakingTimeList);
+    //console.log("Speaking Time List: " + speakingTimeList);
     return speakingTimeList;
   }
 
   function getSpeakingTime(speakerName) {
-    console.log("Get Speaking Time Called");
+    //console.log("Get Speaking Time Called");
     let speakingTime = 0;
     for (let i = 0; i < sentences.length; i++) {
       if (sentences[i].speaker === speakerName) {
@@ -342,8 +342,8 @@ function App() {
       }
     }
     //console.log(JSON.stringify(sentences, null, 2));
-    console.log("SpeakerList: " + totalSpeakers(sentences));
-    console.log("Speaking time of speaker " + speakerName + " is: " + speakingTime);
+    //console.log("SpeakerList: " + totalSpeakers(sentences));
+    //console.log("Speaking time of speaker " + speakerName + " is: " + speakingTime);
     return speakingTime;
   }
 
@@ -366,69 +366,156 @@ function App() {
     console.log(JSON.stringify(labeledQuestions, null, 2));
     console.log("Printing 'questioningTime'");
     console.log(JSON.stringify(questioningTime, null, 2));
-}
-function removeQuestion(idx) {
-  let newQuestions = [...questions];
-  newQuestions.splice(idx, 1);
-  setQuestions(newQuestions);
-}
+  }
+  function removeQuestion(idx) {
+    let newQuestions = [...questions];
+    newQuestions.splice(idx, 1);
+    setQuestions(newQuestions);
+  }
 
-function selectLabel(index, label) {
-  let newLabeledQuestions = [...labeledQuestions];
-  newLabeledQuestions[index] = label;
-  setLabeledQuestions(newLabeledQuestions);
-}
+  function selectLabel(index, label) {
+    let newLabeledQuestions = [...labeledQuestions];
+    newLabeledQuestions[index] = label;
+    setLabeledQuestions(newLabeledQuestions);
+  }
 
-function getAmountOfLabel(label) {
-  let amount = 0;
-  for(let i = 0; i < labeledQuestions.length; i++){
-    if(labeledQuestions[i] == label){
-      amount++;
+  function getAmountOfLabel(label) {
+    let amount = 0;
+    for(let i = 0; i < labeledQuestions.length; i++){
+      if(labeledQuestions[i] == label){
+        amount++;
+      }
+    }
+    return amount;
+  }
+
+  function getMaxSpeaker(){
+    let speakTimeList1 = totalSpeakers(sentences);
+    let maxSpeakerName = "";
+    let maxSpeakerDuration = 0;
+    let tempSpeaker = 0;
+    for(let i = 0; i < speakTimeList1.length; i++){
+      tempSpeaker = getSpeakingTime(speakTimeList1[i]);
+      console.log("temp speaking time: " + tempSpeaker);
+      if(tempSpeaker > maxSpeakerDuration){
+        maxSpeakerDuration = tempSpeaker;
+        maxSpeakerName = speakTimeList1[i];
+      }
+    }
+    console.log("maxSpeaker: " + maxSpeakerName);
+    return maxSpeakerName;
+  }
+
+  function timeObj(x,y){
+    this.x = x;
+    this.y = y;
+    return this;
+  }
+
+  function setTimeChartData () {
+    if (sentences){
+      let data = [];
+      for(let i = 0; i < sentences.length; i++){
+          let timeListObj = new timeObj(sentences[i].speaker, [sentences[i].start/1000, sentences[i].end/1000])
+          data.push(timeListObj);
+      }
+      return data;
     }
   }
-  return amount;
-}
 
-
-const barChartProps = {
-  options: {
-    dataLabels: {
-      enabled: true,
-      style: {
-        fontSize: "28px",
-        fontFamily: "Helvetica, Arial, sans-serif",
-        fontWeight: "bold"
+  const timeChartProps = {
+    series: [
+      {
+        data: setTimeChartData ()
       }
-    },
-    xaxis: {
-      labels: {
+    ],
+    options: {
+      chart: {
+        type: 'rangeBar'
+      },
+      title: {
+        text: "Speaking Timeline",
+        align: 'left',
         style: {
-            fontSize: '20px'
+          fontSize:  '30px',
+          fontWeight:  'bold',
+          fontFamily:  undefined,
+          color:  '#263238'
+        },
+      },
+      plotOptions: {
+        bar: {
+          horizontal: true
         }
       },
-      categories: ["Knowledge","Understand","Progress","Evaluate","Create","Apply","Analyze"]
-    }
-  },
-  series: [{
-    data: [getAmountOfLabel("Knowledge"), getAmountOfLabel("Understand"), getAmountOfLabel("Progress"), getAmountOfLabel("Evaluate"), getAmountOfLabel("Create"), getAmountOfLabel("Apply"), getAmountOfLabel("Analyze")]
-  }],
-}
-
-const pieChartProps = {
-  options: {
-    dataLabels: {
-      enabled: true,
-      style: {
-        fontSize: "28px",
-        fontFamily: "Helvetica, Arial, sans-serif",
-        fontWeight: "bold"
+      xaxis: {
+        type: 'numeric'
       }
     },
-    labels: [...totalSpeakers(sentences)]
-  },
-  series: [...speakingTimeList()],
+  };
 
-}
+  const barChartProps = {
+    options: {
+      title: {
+        text: "Question Category Distribution",
+        align: 'left',
+        style: {
+          fontSize:  '30px',
+          fontWeight:  'bold',
+          fontFamily:  undefined,
+          color:  '#263238'
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: "28px",
+          fontFamily: "Helvetica, Arial, sans-serif",
+          fontWeight: "bold"
+        },
+      },
+      xaxis: {
+        labels: {
+          style: {
+            fontSize: '20px'
+          }
+        },
+        categories: ["Knowledge","Understand","Apply","Analyze","Evaluate","Create"]
+      }
+    },
+    series: [{
+      data: [getAmountOfLabel("Knowledge"), getAmountOfLabel("Understand"), getAmountOfLabel("Apply"), getAmountOfLabel("Analyze"), getAmountOfLabel("Evaluate"), getAmountOfLabel("Create")]
+    }],
+    
+  }
+
+  const pieChartProps = {
+    options: {
+      title: {
+        text: "Talking Distribution",
+        align: 'left',
+        style: {
+          fontSize:  '30px',
+          fontWeight:  'bold',
+          fontFamily:  undefined,
+          color:  '#263238'
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: "28px",
+          fontFamily: "Helvetica, Arial, sans-serif",
+          fontWeight: "bold"
+        }
+      },
+      labels: ["Teacher", "Students", "Non-Speaking"]
+    },
+    //series: [...speakingTimeList()],
+    series: [getSpeakingTime(getMaxSpeaker()), sumSpeakingTime(sentences) - getSpeakingTime(getMaxSpeaker()), getSpeakingTime("B")],
+  }
+
+
 
 return (
   <div>
@@ -527,19 +614,21 @@ return (
             <h1>Full Transcript</h1>
             <p className="lead">{transcript}</p>
           </div>
+          
           <div className="card-deck mb-3 text-center">
             <div className="card mb-4 box-shadow">
               <div className="card-header">
-                <h2>Sentences</h2>
+                {/*<h2>Sentences</h2>*/}
               </div>
               <div className="card-body">
-                {sentences.map((sentence) => (
+                {/*{sentences.map((sentence) => (
                   <ul className="nav justify-content-center border-bottom">
                     <li className="nav-item">"{sentence.text}"</li>
                   </ul>
-                ))}
+                ))}*/}
               </div>
             </div>
+                
             <div className="card mb-4 box-shadow">
               <div className="card-header">
                 <h2>Questions</h2>
@@ -653,6 +742,8 @@ return (
               </div>
             </div>
             <div>
+             
+              
               <tr>
                   <td><Chart
                   options={barChartProps.options}
@@ -667,6 +758,17 @@ return (
                   width="650"
                   /></td>
               </tr>
+              <br></br>
+              <tr>
+                <td><Chart
+                  options={timeChartProps.options}
+                  series={timeChartProps.series}
+                  type="rangeBar"
+                  height={600}
+                  width={1300}
+                /></td>
+              </tr>
+              
             </div>
           </div>
 
