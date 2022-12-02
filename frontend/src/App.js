@@ -13,7 +13,7 @@ import Dropdown from "react-bootstrap/Dropdown";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Chart from "react-apexcharts";
-import MyCharts from './charts';
+import MyCharts from "./charts";
 
 function App() {
   const [selectedFile, setSelectedFile] = useState();
@@ -43,8 +43,7 @@ function App() {
 
   var it = 0;
 
-
-  const modalRef = useRef()
+  const modalRef = useRef();
 
   const showModal = () => {
     const modalEle = modalRef.current;
@@ -233,14 +232,13 @@ function App() {
   }
 
   function generatePDF() {
-
     diagnostics();
 
     console.log("Sending labeledQuestions to chart: ");
     setSpeakersAndTimes(sentences);
     diagnostics();
 
-    var doc = new jsPDF('p', 'pt', 'letter')
+    var doc = new jsPDF("p", "pt", "letter");
 
     var sentenceArray = new Array();
     for (let i = 0; i < sentences.length; i++) {
@@ -282,28 +280,27 @@ function App() {
       theme: "grid",
     });
 
-    doc.save('demo.pdf')
+    doc.save("demo.pdf");
   }
 
-  function setSpeakersAndTimes(sentences){
+  function setSpeakersAndTimes(sentences) {
     //console.log("setSpeakersAndTimes Called");
     let speakerAndTimeArray = [];
     let speakerArray = totalSpeakers(transcript);
     let timeArray = [];
 
     //console.log("speakerArray set to: " + speakerArray);
-    
-    
+
     return speakerAndTimeArray;
   }
 
   //functions pasted from Micah Branch
-  function sumSpeakingTime(sentences){
+  function sumSpeakingTime(sentences) {
     let totalTime = 0;
-    for(let i = 0; i < sentences.length; i++){
-        totalTime += (sentences[i].end - sentences[i].start);
+    for (let i = 0; i < sentences.length; i++) {
+      totalTime += sentences[i].end - sentences[i].start;
     }
-    return totalTime
+    return totalTime;
   }
 
   function totalSpeakers(sentences) {
@@ -315,7 +312,7 @@ function App() {
     }
     //console.log("Speakers Detected: ");
     //for (let i = 0; i < speakerList.length; i++) {
-      //console.log(speakerList[i]);
+    //console.log(speakerList[i]);
     //}
     //console.log("Total Speakers: " + speakerList.length);
     return speakerList;
@@ -347,9 +344,9 @@ function App() {
     return speakingTime;
   }
 
-  async function diagnostics(){
+  async function diagnostics() {
     //double locked to ensure minimal prints
-    console.log("--------------DIAGNOSTICS----------------")
+    console.log("--------------DIAGNOSTICS----------------");
     console.log("Printing 'transcript': ");
     console.log(JSON.stringify(transcript, null, 2));
     console.log("Printing 'sentences': ");
@@ -381,23 +378,23 @@ function App() {
 
   function getAmountOfLabel(label) {
     let amount = 0;
-    for(let i = 0; i < labeledQuestions.length; i++){
-      if(labeledQuestions[i] == label){
+    for (let i = 0; i < labeledQuestions.length; i++) {
+      if (labeledQuestions[i] == label) {
         amount++;
       }
     }
     return amount;
   }
 
-  function getMaxSpeaker(){
+  function getMaxSpeaker() {
     let speakTimeList1 = totalSpeakers(sentences);
     let maxSpeakerName = "";
     let maxSpeakerDuration = 0;
     let tempSpeaker = 0;
-    for(let i = 0; i < speakTimeList1.length; i++){
+    for (let i = 0; i < speakTimeList1.length; i++) {
       tempSpeaker = getSpeakingTime(speakTimeList1[i]);
       console.log("temp speaking time: " + tempSpeaker);
-      if(tempSpeaker > maxSpeakerDuration){
+      if (tempSpeaker > maxSpeakerDuration) {
         maxSpeakerDuration = tempSpeaker;
         maxSpeakerName = speakTimeList1[i];
       }
@@ -406,18 +403,21 @@ function App() {
     return maxSpeakerName;
   }
 
-  function timeObj(x,y){
+  function timeObj(x, y) {
     this.x = x;
     this.y = y;
     return this;
   }
 
-  function setTimeChartData () {
-    if (sentences){
+  function setTimeChartData() {
+    if (sentences) {
       let data = [];
-      for(let i = 0; i < sentences.length; i++){
-          let timeListObj = new timeObj(sentences[i].speaker, [sentences[i].start/1000, sentences[i].end/1000])
-          data.push(timeListObj);
+      for (let i = 0; i < sentences.length; i++) {
+        let timeListObj = new timeObj(sentences[i].speaker, [
+          sentences[i].start / 1000,
+          sentences[i].end / 1000,
+        ]);
+        data.push(timeListObj);
       }
       return data;
     }
@@ -426,31 +426,31 @@ function App() {
   const timeChartProps = {
     series: [
       {
-        data: setTimeChartData ()
-      }
+        data: setTimeChartData(),
+      },
     ],
     options: {
       chart: {
-        type: 'rangeBar'
+        type: "rangeBar",
       },
       title: {
         text: "Speaking Timeline",
-        align: 'left',
+        align: "left",
         style: {
-          fontSize:  '30px',
-          fontWeight:  'bold',
-          fontFamily:  undefined,
-          color:  '#263238'
+          fontSize: "30px",
+          fontWeight: "bold",
+          fontFamily: undefined,
+          color: "#263238",
         },
       },
       plotOptions: {
         bar: {
-          horizontal: true
-        }
+          horizontal: true,
+        },
       },
       xaxis: {
-        type: 'numeric'
-      }
+        type: "numeric",
+      },
     },
   };
 
@@ -458,12 +458,12 @@ function App() {
     options: {
       title: {
         text: "Question Category Distribution",
-        align: 'left',
+        align: "left",
         style: {
-          fontSize:  '30px',
-          fontWeight:  'bold',
-          fontFamily:  undefined,
-          color:  '#263238'
+          fontSize: "30px",
+          fontWeight: "bold",
+          fontFamily: undefined,
+          color: "#263238",
         },
       },
       dataLabels: {
@@ -471,34 +471,42 @@ function App() {
         style: {
           fontSize: "28px",
           fontFamily: "Helvetica, Arial, sans-serif",
-          fontWeight: "bold"
+          fontWeight: "bold",
         },
       },
       xaxis: {
         labels: {
           style: {
-            fontSize: '20px'
-          }
+            fontSize: "20px",
+          },
         },
-        categories: ["Knowledge","Understand","Apply","Analyze","Evaluate","Create"]
-      }
+        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"],
+      },
     },
-    series: [{
-      data: [getAmountOfLabel("Knowledge"), getAmountOfLabel("Understand"), getAmountOfLabel("Apply"), getAmountOfLabel("Analyze"), getAmountOfLabel("Evaluate"), getAmountOfLabel("Create")]
-    }],
-    
-  }
+    series: [
+      {
+        data: [
+          getAmountOfLabel("Knowledge"),
+          getAmountOfLabel("Understand"),
+          getAmountOfLabel("Apply"),
+          getAmountOfLabel("Analyze"),
+          getAmountOfLabel("Evaluate"),
+          getAmountOfLabel("Create"),
+        ],
+      },
+    ],
+  };
 
   const pieChartProps = {
     options: {
       title: {
         text: "Talking Distribution",
-        align: 'left',
+        align: "left",
         style: {
-          fontSize:  '30px',
-          fontWeight:  'bold',
-          fontFamily:  undefined,
-          color:  '#263238'
+          fontSize: "30px",
+          fontWeight: "bold",
+          fontFamily: undefined,
+          color: "#263238",
         },
       },
       dataLabels: {
@@ -506,310 +514,290 @@ function App() {
         style: {
           fontSize: "28px",
           fontFamily: "Helvetica, Arial, sans-serif",
-          fontWeight: "bold"
-        }
+          fontWeight: "bold",
+        },
       },
-      labels: ["Teacher", "Students", "Non-Speaking"]
+      labels: ["Teacher", "Students", "Non-Speaking"],
     },
     //series: [...speakingTimeList()],
-    series: [getSpeakingTime(getMaxSpeaker()), sumSpeakingTime(sentences) - getSpeakingTime(getMaxSpeaker()), getSpeakingTime("B")],
-  }
+    series: [
+      getSpeakingTime(getMaxSpeaker()),
+      sumSpeakingTime(sentences) - getSpeakingTime(getMaxSpeaker()),
+      getSpeakingTime("B"),
+    ],
+  };
 
+  return (
+    <div>
+      <nav className="navbar navbar-expand-lg bg-dark">
+        <a className="navbar-brand" href="#">
+          <img
+            src="https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/2628.png"
+            className="tcu-image"
+            width="80"
+            height="80"
+            alt=""
+          />
+        </a>
 
-
-return (
-  <div>
-    <nav className="navbar navbar-expand-lg bg-dark">
-      <a className="navbar-brand" href="#">
-        <img
-          src="https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/2628.png"
-          className="tcu-image"
-          width="80"
-          height="80"
-          alt=""
-        />
-      </a>
-
-      <div className="collapse navbar-collapse justify-content-end" id="navbarCollapse">
-        <ul className="navbar-nav">
-          <li className="nav-item">
-            <a className="nav-link text-light" href="#">
-              About Us
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link text-light" href="#">
-              IEOT
-            </a>
-          </li>
-          <li className="nav-item">
-            <a className="nav-link text-light" href="#">
-              Contact Us
-            </a>
-          </li>
-        </ul>
-      </div>
-    </nav>
-
-    <div className="container" id="fileInputGroup">
-      <label className="form-label" htmlFor="customFile">
-        Please Upload a File for Transcription
-      </label>
-      <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
-      {isSelected ? (
-        <div>
-          <p>Filename: {selectedFile.name}</p>
-          <p>Filetype: {selectedFile.type}</p>
-          <p>Size in bytes: {selectedFile.size}</p>
-          <p>lastModifiedDate: {selectedFile.lastModifiedDate.toLocaleDateString()}</p>
+        <div className="collapse navbar-collapse justify-content-end" id="navbarCollapse">
+          <ul className="navbar-nav">
+            <li className="nav-item">
+              <a className="nav-link text-light" href="#">
+                About Us
+              </a>
+            </li>
+            <li className="nav-item">
+              <a className="nav-link text-light" href="#">
+                IEOT
+              </a>
+            </li>
+            <li className="nav-item">
+              <a className="nav-link text-light" href="#">
+                Contact Us
+              </a>
+            </li>
+          </ul>
         </div>
-      ) : (
-        <p>Select a file to show details</p>
-      )}
-      <div>
-        <button
-          type="button"
-          className="btn btn-primary"
-          disabled={isDisabled}
-          data-bs-toggle="modal"
-          data-bs-target="#progressModal"
-          onClick={handleSubmission}
-        >
-          Submit
-        </button>
-        <div className="addEmployee">
-          <div className="modal fade" ref={modalRef} tabIndex="-1" style={{ marginTop: "115px" }}>
-            <div className="modal-dialog">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title" id="staticBackdropLabel">
-                    Analyzing
-                  </h5>
-                </div>
-                <div className="modal-body">
-                  <div>
-                    <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
-                  </div>
-                  <button
-                    onClick={() => window.location.reload(false)}
-                    style={{
-                      backgroundColor: "dodgerblue",
-                      color: "white",
-                      padding: "5px 15px",
-                      borderRadius: "5px",
-                      border: "0",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {sentences ? (
-        <div>
-          <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
-            <h1>Full Transcript</h1>
-            <p className="lead">{transcript}</p>
-          </div>
-          
-          <div className="card-deck mb-3 text-center">
-            <div className="card mb-4 box-shadow">
-              <div className="card-header">
-                {/*<h2>Sentences</h2>*/}
-              </div>
-              <div className="card-body">
-                {/*{sentences.map((sentence) => (
-                  <ul className="nav justify-content-center border-bottom">
-                    <li className="nav-item">"{sentence.text}"</li>
-                  </ul>
-                ))}*/}
-              </div>
-            </div>
-                
-            <div className="card mb-4 box-shadow">
-              <div className="card-header">
-                <h2>Questions</h2>
-              </div>
-              <div className="card-body">
-                <div className="container">
-                  <table className="table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Time</th>
-                        <th scope="col">Question</th>
-                        <th scope="col">Speaker</th>
-                        <th scope="col">Question Type</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {questions.map((question, index) => (
-                        <tr>
-                          <td>{times[index]}</td>
-                          <td>"{question.text}"</td>
-                          <td>{speakers[index]}</td>
-                          <td>{labeledQuestions[index]}</td>
-                          <td>
-                            <Dropdown>
-                              <Dropdown.Toggle variant="sm" id="dropdown-basic">
-                                Select Type
-                              </Dropdown.Toggle>
+      </nav>
 
-                              <Dropdown.Menu>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Knowledge");
-                                  }}
-                                >
-                                  Knowledge
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Understand");
-                                  }}
-                                >
-                                  Understand
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Apply");
-                                  }}
-                                >
-                                  Apply
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Analyze");
-                                  }}
-                                >
-                                  Analyze
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Evaluate");
-                                  }}
-                                >
-                                  Evaluate
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Create");
-                                  }}
-                                >
-                                  Create
-                                </Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
-                          </td>
-                          <td>
-                            <button onClick={() => removeQuestion(index)}>Remove</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-            <div className="card mb-4 box-shadow">
-              <div className="card-header">
-                <h2>Question Timestamps</h2>
-              </div>
-              <div className="card-body">
-                {times.map((time) => (
-                  <ul className="nav justify-content-center border-bottom">
-                    <li className="nav-item">"{time}"</li>
-                  </ul>
-                ))}
-              </div>
-            </div>
-            <div className="card mb-4 box-shadow">
-              <div className="card-header">
-                <h2>Number of Questions</h2>
-              </div>
-              <div className="card-body">
-                <h2>{numQuestions}</h2>
-              </div>
-            </div>
-            <div className="card mb-4 box-shadow">
-              <div className="card-header">
-                <h2>Total Questioning Time</h2>
-              </div>
-              <div className="card-body">
-                <h2>{questioningTime}</h2>
-              </div>
-            </div>
-            <div>
-             
-              
-              <tr>
-                  <td><Chart
-                  options={barChartProps.options}
-                  series={barChartProps.series}
-                  type="bar"
-                  width="650"
-                  /></td>
-                  <td><Chart
-                  options={pieChartProps.options}
-                  series={pieChartProps.series}
-                  type="pie"
-                  width="650"
-                  /></td>
-              </tr>
-              <br></br>
-              <tr>
-                <td><Chart
-                  options={timeChartProps.options}
-                  series={timeChartProps.series}
-                  type="rangeBar"
-                  height={600}
-                  width={1300}
-                /></td>
-              </tr>
-              
-            </div>
-          </div>
-
+      <div className="container" id="fileInputGroup">
+        <label className="form-label" htmlFor="customFile">
+          Please Upload a File for Transcription
+        </label>
+        <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
+        {isSelected ? (
           <div>
-            <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
-              Download PDF
-            </button>
+            <p>Filename: {selectedFile.name}</p>
+            <p>Filetype: {selectedFile.type}</p>
+            <p>Size in bytes: {selectedFile.size}</p>
+            <p>lastModifiedDate: {selectedFile.lastModifiedDate.toLocaleDateString()}</p>
+          </div>
+        ) : (
+          <p>Select a file to show details</p>
+        )}
+        <div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={isDisabled}
+            data-bs-toggle="modal"
+            data-bs-target="#progressModal"
+            onClick={handleSubmission}
+          >
+            Submit
+          </button>
+          <div className="addEmployee">
+            <div className="modal fade" ref={modalRef} tabIndex="-1" style={{ marginTop: "115px" }}>
+              <div className="modal-dialog">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title" id="staticBackdropLabel">
+                      Analyzing
+                    </h5>
+                  </div>
+                  <div className="modal-body">
+                    <div>
+                      <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
+                    </div>
+                    <button
+                      onClick={() => window.location.reload(false)}
+                      style={{
+                        backgroundColor: "dodgerblue",
+                        color: "white",
+                        padding: "5px 15px",
+                        borderRadius: "5px",
+                        border: "0",
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      ) : null}
+        {sentences ? (
+          <div>
+            <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+              <h1>Full Transcript</h1>
+              <p className="lead">{transcript}</p>
+            </div>
 
-      <footer className="py-3 my-4" id="footer">
-        <ul className="nav justify-content-center border-bottom pb-3 mb-3">
-          <li className="nav-item">
-            <a href="#" className="nav-link px-2 text-muted">
-              Home
-            </a>
-          </li>
-          <li className="nav-item">
-            <a href="#" className="nav-link px-2 text-muted">
-              Features
-            </a>
-          </li>
-          <li className="nav-item">
-            <a href="#" className="nav-link px-2 text-muted">
-              FAQs
-            </a>
-          </li>
-          <li className="nav-item">
-            <a href="#" className="nav-link px-2 text-muted">
-              Pricing
-            </a>
-          </li>
-        </ul>
-        <p className="text-center text-muted">
-          © 2022 Instructional Equity Observation Tool, Inc
-        </p>
-      </footer>
+            <div className="card-deck mb-3 text-center">
+              <div className="card mb-4 box-shadow">
+                <div className="card-header">
+                  <h2>Questions</h2>
+                </div>
+                <div className="card-body">
+                  <div className="container">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th scope="col">Time</th>
+                          <th scope="col">Question</th>
+                          <th scope="col">Speaker</th>
+                          <th scope="col">Question Type</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {questions.map((question, index) => (
+                          <tr>
+                            <td>{times[index]}</td>
+                            <td>"{question.text}"</td>
+                            <td>{speakers[index]}</td>
+                            <td>{labeledQuestions[index]}</td>
+                            <td>
+                              <Dropdown>
+                                <Dropdown.Toggle variant="sm" id="dropdown-basic">
+                                  Select Type
+                                </Dropdown.Toggle>
+
+                                <Dropdown.Menu>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Knowledge");
+                                    }}
+                                  >
+                                    Knowledge
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Understand");
+                                    }}
+                                  >
+                                    Understand
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Apply");
+                                    }}
+                                  >
+                                    Apply
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Analyze");
+                                    }}
+                                  >
+                                    Analyze
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Evaluate");
+                                    }}
+                                  >
+                                    Evaluate
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Create");
+                                    }}
+                                  >
+                                    Create
+                                  </Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
+                            </td>
+                            <td>
+                              <button onClick={() => removeQuestion(index)}>Remove</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div className="card mb-4 box-shadow">
+                <div className="card-header">
+                  <h2>Number of Questions</h2>
+                </div>
+                <div className="card-body">
+                  <h2>{numQuestions}</h2>
+                </div>
+              </div>
+              <div className="card mb-4 box-shadow">
+                <div className="card-header">
+                  <h2>Total Questioning Time</h2>
+                </div>
+                <div className="card-body">
+                  <h2>{questioningTime}</h2>
+                </div>
+              </div>
+              <div>
+                <tr>
+                  <td>
+                    <Chart
+                      options={barChartProps.options}
+                      series={barChartProps.series}
+                      type="bar"
+                      width="650"
+                    />
+                  </td>
+                  <td>
+                    <Chart
+                      options={pieChartProps.options}
+                      series={pieChartProps.series}
+                      type="pie"
+                      width="650"
+                    />
+                  </td>
+                </tr>
+                <br></br>
+                {/* <tr>
+                  <td>
+                    <Chart
+                      options={timeChartProps.options}
+                      series={timeChartProps.series}
+                      type="rangeBar"
+                      height={600}
+                      width={1300}
+                    />
+                  </td>
+                </tr> */}
+              </div>
+            </div>
+
+            <div>
+              <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
+                Download PDF
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        <footer className="py-3 my-4" id="footer">
+          <ul className="nav justify-content-center border-bottom pb-3 mb-3">
+            <li className="nav-item">
+              <a href="#" className="nav-link px-2 text-muted">
+                Home
+              </a>
+            </li>
+            <li className="nav-item">
+              <a href="#" className="nav-link px-2 text-muted">
+                Features
+              </a>
+            </li>
+            <li className="nav-item">
+              <a href="#" className="nav-link px-2 text-muted">
+                FAQs
+              </a>
+            </li>
+            <li className="nav-item">
+              <a href="#" className="nav-link px-2 text-muted">
+                Pricing
+              </a>
+            </li>
+          </ul>
+          <p className="text-center text-muted">
+            © 2022 Instructional Equity Observation Tool, Inc
+          </p>
+        </footer>
+      </div>
     </div>
-  </div>
-);
+  );
 }
 
 export default App;
