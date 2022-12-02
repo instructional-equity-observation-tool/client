@@ -254,9 +254,9 @@ function App() {
 
     var questionArray = new Array();
     for (let i = 0; i < questions.length; i++) {
-      console.log("labeledQuestions " + i + ": " + labeledQuestions[i]);
+      //console.log("labeledQuestions " + i + ": " + labeledQuestions[i]);
       questionArray[i] = new Array(questions[i].text, labeledQuestions[i]);
-      console.log("questionArray " + i + ": " + questionArray[i]);
+      //console.log("questionArray " + i + ": " + questionArray[i]);
     }
 
     //var speakTimeArray = new Array();
@@ -298,19 +298,19 @@ function App() {
     }
 
     //functions pasted from Micah Branch
-    function sumSpeakingTime(transcript){
+    function sumSpeakingTime(sentences){
         let totalTime = 0;
-        for(let i = 0; i < transcript.length; i++){
-            totalTime += (transcript[i].end - transcript[i].start);
+        for(let i = 0; i < sentences.length; i++){
+            totalTime += (sentences[i].end - sentences[i].start);
         }
         return totalTime
     }
-
-  function totalSpeakers(transcript) {
+  
+  function totalSpeakers(sentences) {
     let speakerList = [];
-    for (let i = 0; i < transcript.length; i++) {
-      if (!speakerList.includes(transcript[i].speaker)) {
-        speakerList.push(transcript[i].speaker);
+    for (let i = 0; i < sentences.length; i++) {
+      if (!speakerList.includes(sentences[i].speaker)) {
+        speakerList.push(sentences[i].speaker);
       }
     }
     console.log("Speakers Detected: ");
@@ -321,13 +321,29 @@ function App() {
     return speakerList;
   }
 
+  function speakingTimeList() {
+    let speakingTimeList = [];
+    let speakerList = totalSpeakers(sentences);
+
+    for (let i = 0; i < speakerList.length; i++){
+      speakingTimeList.push(getSpeakingTime(speakerList[i]));
+    }
+
+    console.log("Speaking Time List: " + speakingTimeList);
+    return speakingTimeList;
+  }
+
   function getSpeakingTime(speakerName) {
+    console.log("Get Speaking Time Called");
     let speakingTime = 0;
-    for (let i = 0; i < transcript.length; i++) {
-      if (transcript[i].speaker === speakerName) {
-        speakingTime += transcript[i].end - transcript[i].start;
+    for (let i = 0; i < sentences.length; i++) {
+      if (sentences[i].speaker === speakerName) {
+        speakingTime += sentences[i].end - sentences[i].start;
       }
     }
+    //console.log(JSON.stringify(sentences, null, 2));
+    console.log("SpeakerList: " + totalSpeakers(sentences));
+    console.log("Speaking time of speaker " + speakerName + " is: " + speakingTime);
     return speakingTime;
   }
 
@@ -408,9 +424,9 @@ const pieChartProps = {
         fontWeight: "bold"
       }
     },
-    labels: ["Teacher", "Student", "Non-Speaking"]
+    labels: [...totalSpeakers(sentences)]
   },
-  series: [89,49,58],
+  series: [...speakingTimeList()],
 
 }
 
