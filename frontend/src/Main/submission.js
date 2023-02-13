@@ -17,7 +17,7 @@ import autoTable from "jspdf-autotable";
 import Chart from "react-apexcharts";
 import MyCharts from "../charts";
 
-export default function Submission(){
+export default function Submission() {
     const [completed, setCompleted] = useState(0);
     const [transcript, setTranscript] = useState("");
     const [sentences, setSentences] = useState("");
@@ -581,7 +581,7 @@ export default function Submission(){
           </div>
         </div>
         {sentences ? (
-          <div>
+          <div className="submission-main">
             <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
               <h1>Full Transcript</h1>
               <p className="lead">{transcript}</p>

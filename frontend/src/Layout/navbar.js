@@ -4,7 +4,7 @@ import {Outlet, Link} from "react-router-dom";
 export default class Layout extends React.Component {
     render(){
         return(
-            <><><nav className="navbar navbar-expand-lg bg-dark">
+            <><><nav className="navbar navbar-expand-lg" id="main-nav">
                 <a className="navbar-brand" href="#">
                     <img
                         src="https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/2628.png"
