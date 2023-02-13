@@ -41,3 +41,15 @@ body{
     overflow: auto;
     border: 0.5px solid black;
 }
+
+body{
+    color: black;
+    }
+    .bg-secondary-soft {
+        background-color: rgba(208, 212, 217, 0.1) !important;
+    }
+    
+
+    .file-upload{
+        padding-bottom: 50px;
+    }
