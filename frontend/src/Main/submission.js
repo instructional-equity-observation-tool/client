@@ -254,7 +254,7 @@ export default function Submission() {
         let tempSpeaker = 0;
         for (let i = 0; i < speakTimeList1.length; i++) {
           tempSpeaker = getSpeakingTime(speakTimeList1[i]);
-          console.log("temp speaking time: " + tempSpeaker);
+          // console.log("temp speaking time: " + tempSpeaker);
           if (tempSpeaker > maxSpeakerDuration) {
             maxSpeakerDuration = tempSpeaker;
             maxSpeakerName = speakTimeList1[i];
