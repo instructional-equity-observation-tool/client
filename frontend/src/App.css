@@ -42,6 +42,24 @@ body{
     border: 0.5px solid black;
 }
 
+.sentence {
+    margin-left: 20px;
+    display: flex;
+}
+
+.transcript-time {
+    width: 60px;
+}
+.transcript-speaker {
+    margin-left: 30px;
+    margin-right: 10px;
+    white-space: nowrap;
+}
+
+.transcript-text {
+    text-align: left;
+}
+
 body{
     color: black;
     }
