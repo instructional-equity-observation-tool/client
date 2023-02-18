@@ -12,6 +12,7 @@ import ProgressBar from "../progress";
 import { Modal } from "bootstrap";
 import Dropdown from "react-bootstrap/Dropdown";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import Chart from "react-apexcharts";
 
 export default function Submission() {
@@ -148,189 +149,11 @@ export default function Submission() {
       labeled[j] = "";
     }
 
-<<<<<<< HEAD
-    var handleSubmission = () => {
-        if (isDisabled) {
-          return;
-        }
-        setIsDisabled(true);
-        showModal();
-
-        var interval = setInterval(() => {
-          it += 1;
-          console.log(completed);
-          setCompleted(it);
-          if (it === 95) {
-            clearInterval(interval);
-            it = 0;
-          }
-          //do whatever here..
-        }, 2000);
-        const data = new FormData();
-        data.append("file", selectedFile);
-        axios.post(endpoint, data).then((res) => {
-          console.log(res);
-          it = 0;
-          setSentences(res.data.sentences);
-          createTranscript(res.data.sentences);
-          findQuestions(res.data.sentences);
-          printTimes(res.data.sentences);
-          setCompleted(0);
-        });
-      };
-
-      function createTranscript(sentences) {
-        var transcript = "";
-        for (let i = 0; i < sentences.length; i++) {
-          transcript += " " + sentences[i].text;
-        }
-        setTranscript(transcript);
-        setIsDisabled(false);
-        hideModal();
-        return transcript;
-      }
-
-        var it = 0;
-
-        const modalRef = useRef();
-
-        const showModal = () => {
-            const modalEle = modalRef.current;
-            const bsModal = new Modal(modalEle, {
-            backdrop: "static",
-            keyboard: false,
-            });
-            bsModal.show();
-        };
-
-        const hideModal = () => {
-            const modalEle = modalRef.current;
-            const bsModal = Modal.getInstance(modalEle);
-            bsModal.hide();
-        };
-
-      function findQuestions(sentences) {
-        var qs = [];
-        for (let i = 0; i < sentences.length; i++) {
-          if (sentences[i].text.includes("?")) {
-            qs.push(sentences[i]);
-          }
-        }
-        setQuestions(qs);
-        setNumQuestions(qs.length);
-        findQuestionsLabels(qs);
-        return qs;
-      }
-
-      function printTimes(sentences) {
-        var sStamps = [];
-        var speaks = [];
-        var qDur = 0;
-        for (let i = 0; i < sentences.length; i++) {
-          console.log(sentences[i].text.includes("?"));
-          if (sentences[i].text.includes("?")) {
-            qDur += sentences[i].end - sentences[i].start;
-            sStamps.push(convertMsToTime(sentences[i].start));
-            speaks.push(sentences[i].speaker);
-          }
-        }
-        it = 0;
-        setQuestioningTime(convertMsToTime(qDur));
-        setTimes(sStamps);
-        setSpeakers(speaks);
-        return sStamps;
-      }
-
-      function padTo2Digits(num) {
-        return num.toString().padStart(2, "0");
-      }
-
-      function convertMsToTime(milliseconds) {
-        let seconds = Math.floor(milliseconds / 1000);
-        let minutes = Math.floor(seconds / 60);
-        let hours = Math.floor(minutes / 60);
-    
-        seconds = seconds % 60;
-        minutes = minutes % 60;
-    
-        // 👇️ If you don't want to roll hours over, e.g. 24 to 00
-        // 👇️ comment (or remove) the line below
-        // commenting next line gets you `24:00:00` instead of `00:00:00`
-        // or `36:15:31` instead of `12:15:31`, etc.
-        hours = hours % 24;
-    
-        return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(seconds)}`;
-      }
-    
-      function findQuestionsLabels(quests) {
-        var labeled = new Array(quests.length);
-    
-        for (var j = 0; j < labeled.length; j++) {
-          labeled[j] = "";
-        }
-    
-        for (let i = 0; i < quests.length; i++) {
-          for (let j = 0; j < quests[i].words.length; j++) {
-            var tempWord = quests[i].words[j].text
-              .replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "")
-              .replace(/\s{2,}/g, " ");
-    
-            if (knowledgeArray.some((v) => tempWord === v)) {
-              if (labeled[i] === "") {
-                labeled[i] = "Knowledge";
-              } else if (!labeled[i].includes("Knowledge")) {
-                labeled[i] += " or Knowledge";
-              }
-            }
-    
-            if (analyzeArray.some((v) => tempWord === v)) {
-              if (labeled[i] === "") {
-                labeled[i] = "Analyze";
-              } else {
-                labeled[i] += " or Analyze";
-              }
-            }
-    
-            if (applyArray.some((v) => tempWord === v)) {
-              if (labeled[i] === "") {
-                labeled[i] = "Apply";
-              } else if (!labeled[i].includes("Apply")) {
-                labeled[i] += " or Apply";
-              }
-            }
-    
-            if (createArray.some((v) => tempWord === v)) {
-              if (labeled[i] === "") {
-                labeled[i] = "Create";
-              } else if (!labeled[i].includes("Create")) {
-                labeled[i] += " or Create";
-              }
-            }
-    
-            if (evaluateArray.some((v) => tempWord === v)) {
-              if (labeled[i] === "") {
-                labeled[i] = "Evaluate";
-              } else if (!labeled[i].includes("Evaluate")) {
-                labeled[i] += " or Evaluate";
-              }
-            }
-    
-            if (understandArray.some((v) => tempWord === v)) {
-              if (labeled[i] === "") {
-                labeled[i] = "Understand";
-              } else if (!labeled[i].includes("Understand")) {
-                labeled[i] += " or Understand";
-              }
-            }
-          }
-    
-=======
     for (let i = 0; i < quests.length; i++) {
       for (let j = 0; j < quests[i].words.length; j++) {
         let tempWord = quests[i].words[j].text.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
 
         if (knowledgeArray.some((v) => tempWord === v)) {
->>>>>>> origin/main
           if (labeled[i] === "") {
             labeled[i] = "Knowledge";
           } else if (!labeled[i].includes("Knowledge")) {
