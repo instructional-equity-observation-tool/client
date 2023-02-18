@@ -46,7 +46,7 @@ export default function Submission(){
         }
         setIsDisabled(true);
         showModal();
-    
+
         var interval = setInterval(() => {
           it += 1;
           console.log(completed);
@@ -99,7 +99,7 @@ export default function Submission(){
             const bsModal = Modal.getInstance(modalEle);
             bsModal.hide();
         };
-    
+
       function findQuestions(sentences) {
         var qs = [];
         for (let i = 0; i < sentences.length; i++) {
@@ -112,7 +112,7 @@ export default function Submission(){
         findQuestionsLabels(qs);
         return qs;
       }
-    
+
       function printTimes(sentences) {
         var sStamps = [];
         var speaks = [];
@@ -131,11 +131,11 @@ export default function Submission(){
         setSpeakers(speaks);
         return sStamps;
       }
-    
+
       function padTo2Digits(num) {
         return num.toString().padStart(2, "0");
       }
-    
+
       function convertMsToTime(milliseconds) {
         let seconds = Math.floor(milliseconds / 1000);
         let minutes = Math.floor(seconds / 60);

@@ -36,6 +36,12 @@ app.listen(PORT, () => {
   console.log('Server Running sucessfully.');
 });
 
+//test post
+app.post('/calculate/sentences', function(req, res){
+  let sentString = "sentences string"
+  return res.status(200).send(sentString);
+});
+
 app.post('/upload', function(req, res) {
   if (!req.files || Object.keys(req.files).length === 0) {
     return res.status(400).send('No files were uploaded.');
