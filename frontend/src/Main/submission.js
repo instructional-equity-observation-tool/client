@@ -6,6 +6,7 @@ import { applyArray } from "../expertArrays/apply";
 import { analyzeArray } from "../expertArrays/analyze";
 import { evaluateArray } from "../expertArrays/evaluate";
 import { createArray } from "../expertArrays/create";
+import "../Main/MainPage.css"
 
 import Layout from "../Layout/navbar";
 
@@ -16,6 +17,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Chart from "react-apexcharts";
 import MyCharts from "../charts";
+
+import { Player, BigPlayButton } from 'video-react';
 
 export default function Submission() {
     const [completed, setCompleted] = useState(0);
@@ -32,12 +35,31 @@ export default function Submission() {
     const [selectedFile, setSelectedFile] = useState("");
     const [isSelected, setIsSelected] = useState(false);
     const [speakerAndTime, setSpeakerAndTime] = useState([]);
+    
+    
 
+    const [isAudio, setIsAudio] = useState(false);
+    const [isVideo, setIsVideo] = useState(false);
+    
     const endpoint = "http://localhost:5000/upload";
 
     function handleFileChange(event){
-        setSelectedFile(event.target.files[0])
-        setIsSelected(true)
+      setSelectedFile(event.target.files[0])
+      let file = event.target.files[0]
+      console.log(file)
+      console.log(file.type)
+      const type = file.type
+      if (type.includes('audio')) {
+        setIsAudio(true);
+        setIsVideo(false);
+      } else if (type.includes('video')) {
+        setIsVideo(true);
+        setIsAudio(false);
+      } else {
+        setIsAudio(false);
+        setIsVideo(false);
+      }
+      setIsSelected(true)
     }
 
     var handleSubmission = () => {
@@ -81,24 +103,24 @@ export default function Submission() {
         return transcript;
       }
 
-        var it = 0;
+      var it = 0;
 
-        const modalRef = useRef();
+      const modalRef = useRef();
 
-        const showModal = () => {
-            const modalEle = modalRef.current;
-            const bsModal = new Modal(modalEle, {
-            backdrop: "static",
-            keyboard: false,
-            });
-            bsModal.show();
-        };
+      const showModal = () => {
+          const modalEle = modalRef.current;
+          const bsModal = new Modal(modalEle, {
+          backdrop: "static",
+          keyboard: false,
+          });
+          bsModal.show();
+      };
 
-        const hideModal = () => {
-            const modalEle = modalRef.current;
-            const bsModal = Modal.getInstance(modalEle);
-            bsModal.hide();
-        };
+      const hideModal = () => {
+          const modalEle = modalRef.current;
+          const bsModal = Modal.getInstance(modalEle);
+          bsModal.hide();
+      };
     
       function findQuestions(sentences) {
         var qs = [];
@@ -526,18 +548,35 @@ export default function Submission() {
         <div>
         <div>
         <label className="form-label" htmlFor="customFile">
-            Please Upload a File for Transcription
+            <h4>Please Upload a File for Transcription</h4>
+            <a>.MTS files are not compatible with the video player feature. Please convert to .mp4 file</a>
         </label>
         <input type="file" className="form-control" id="customFile" onChange={handleFileChange}/>
-        {isSelected ? (
+        {isAudio ? (
         <div>
-            <p>Filename: {selectedFile.name}</p>
+            {/* <p>Filename: {selectedFile.name}</p>
             <p>Filetype: {selectedFile.type}</p>
             <p>Size in bytes: {selectedFile.size}</p>
-            <p>lastModifiedDate: {selectedFile.lastModifiedDate.toLocaleDateString()}</p>
+            <p>lastModifiedDate: {selectedFile.lastModifiedDate.toLocaleDateString()}</p> */}
+            <audio controls id="audio-player">
+              <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
+            </audio>
         </div>
         ) : (
-        <p>Select a file to show details</p>
+        <p></p>
+        )}
+        {isVideo ? (
+        <div>
+            {/* <p>Filename: {selectedFile.name}</p>
+            <p>Filetype: {selectedFile.type}</p>
+            <p>Size in bytes: {selectedFile.size}</p>
+            <p>lastModifiedDate: {selectedFile.lastModifiedDate.toLocaleDateString()}</p> */}
+            <video controls id="video-player">
+              <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
+            </video>
+        </div>
+        ) : (
+        <p></p>
         )}
           <button
             type="button"

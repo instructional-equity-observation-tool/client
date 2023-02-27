@@ -7,7 +7,7 @@ export default class Layout extends React.Component {
             <><><nav className="navbar navbar-expand-lg" id="main-nav">
                 <a className="navbar-brand" href="#">
                     <img
-                        src="https://a.espncdn.com/combiner/i?img=/i/teamlogos/ncaa/500/2628.png"
+                        src="https://brand.tcu.edu/wp-content/uploads/2015/12/TCULogo_purple_5X7-01.jpg"
                         className="tcu-image"
                         width="80"
                         height="80"
@@ -23,7 +23,10 @@ export default class Layout extends React.Component {
                             <Link to="/account" className="nav-link text-light"> Account</Link>
                         </li>
                         <li className="nav-item">
-                            <Link to="/contact" className="nav-link text-light"> Contact Us</Link>
+                            <Link to="/contact" className="nav-link text-light"> Login</Link>
+                        </li>
+                        <li className="nav-item">
+                            <Link to="/signup" className="nav-link text-light"> Sign Up</Link>
                         </li>
                     </ul>
                 </div>

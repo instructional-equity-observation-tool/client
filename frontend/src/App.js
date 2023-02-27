@@ -5,6 +5,8 @@ import Account from "./Account/accountPage";
 
 import Layout from "./Layout/navbar";
 import { Main } from "./Main/mainUserPage";
+import Login from "./Login/login";
+import SignUp from "./SignUp/signUp";
 
 
 function App() {
@@ -14,6 +16,8 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route path="/" element={<Main />} />
           <Route path="account" element={<Account />} />
+          <Route path="contact" element={<Login />} />
+          <Route path="signup" element={<SignUp />} />
         </Route>
       </Routes>
     </BrowserRouter>
