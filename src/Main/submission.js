@@ -22,6 +22,7 @@ export default function Submission() {
   const [times, setTimes] = useState("");
   const [speakers, setSpeakers] = useState("");
   const [questions, setQuestions] = useState("");
+  const [respTime, setRespTime] = useState("");
   const [numQuestions, setNumQuestions] = useState("");
   const [labeledQuestions, setLabeledQuestions] = useState("");
   const [questioningTime, setQuestioningTime] = useState("");
@@ -56,6 +57,7 @@ export default function Submission() {
       setSentences(res.data.sentences);
       createTranscript(res.data.sentences);
       findQuestions(res.data.sentences);
+      toResponse(res.data.sentences)
       printTimes(res.data.sentences);
       setCompleted(0);
       hideModal();
@@ -101,6 +103,67 @@ export default function Submission() {
     setNumQuestions(qs.length);
     findQuestionsLabels(qs);
     return qs;
+  }
+
+  function toResponse(sentences) {
+    const qs = {};
+
+    // iterate through the sentences and find the questions
+    for (let i = 0; i < sentences.length; i++) {
+      //const sentence = sentences[i];
+      if (sentences[i].text.includes("?")) {
+        qs[sentences[i].end] = sentences[i];
+      }
+    }
+
+    //console.log(qs)
+
+    // iterate through the sentences again and find the responses to the questions
+    const responses = [];
+    let lastq = 999999999
+    let spek = ""
+    let passable = false
+    for (let i = 0; i < sentences.length; i++) {
+      //const sentence = sentences[i];
+      if (sentences[i].text.includes("?")) {
+        // this is a question, so skip it
+        lastq = sentences[i].end
+        spek = sentences[i].speaker
+        passable = true
+        continue;
+      }
+      if (sentences[i].start > lastq && sentences[i].speaker !== spek && passable) {
+        // this is a response to a question, so add it to the responses list
+        //console.log(sentences[i].speaker)
+        //console.log(spek)
+        responses.push(sentences[i]);
+        passable = false
+      }
+    }
+
+    const stamps = {}
+    let currR
+    let currQ
+
+    for (let q in qs) {
+      stamps[q] = "No Response"
+    }
+
+    for (let i = 0; i < responses.length; i++) {
+      currR = responses[i].start
+      for (let s in qs) {
+        if (qs[s].end < currR) {
+          currQ = qs[s].end
+        }
+      }
+      stamps[currQ] = convertMsToTime((currR - currQ))
+    }
+
+    console.log(stamps)
+    // return the list of responses
+    console.log(responses)
+    setRespTime(stamps)
+    return stamps;
   }
 
   function printTimes(sentences) {
@@ -543,6 +606,7 @@ export default function Submission() {
                         <th scope="col">Time</th>
                         <th scope="col">Question</th>
                         <th scope="col">Speaker</th>
+                        <th scope="col">Response Time</th>
                         <th scope="col">Question Type</th>
                       </tr>
                     </thead>
@@ -552,6 +616,7 @@ export default function Submission() {
                           <td>{times[index]}</td>
                           <td>"{question.text}"</td>
                           <td>{speakers[index]}</td>
+                          <td>{respTime[question.end]}</td>
                           <td>{labeledQuestions[index]}</td>
                           <td>
                             <Dropdown>
