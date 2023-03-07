@@ -671,7 +671,7 @@ export default function Submission() {
                             </Dropdown>
                           </td>
                           <td>
-                            <button onClick={() => removeQuestion(index)}>Remove</button>
+                            <button type="button" class="btn btn-danger" onClick={() => removeQuestion(index)}>Remove</button>
                           </td>
                         </tr>
                       ))}
