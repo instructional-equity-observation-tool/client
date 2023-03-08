@@ -4,8 +4,8 @@ Clone this repository. You will need node and npm installed globally on your mac
 
 Installation:
 
-Open a terminal. Navigate to the `senior-design-project` directory, then type in the following commands to start up front end:
+Open a terminal. Navigate to the `client` directory, then type in the following commands to start up front end:
 
 `npm install`
 
-`npm start`
+`npm run start`
