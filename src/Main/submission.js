@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 import { knowledgeArray } from "../expertArrays/knowledge";
@@ -7,6 +7,8 @@ import { applyArray } from "../expertArrays/apply";
 import { analyzeArray } from "../expertArrays/analyze";
 import { evaluateArray } from "../expertArrays/evaluate";
 import { createArray } from "../expertArrays/create";
+
+import { uploadFile, transcribeFile } from "../utils/assemblyAPI";
 
 import ProgressBar from "../progress";
 import { Modal } from "bootstrap";
@@ -17,27 +19,39 @@ import Chart from "react-apexcharts";
 
 export default function Submission() {
   const [completed, setCompleted] = useState(0);
-  const [transcript, setTranscript] = useState("");
-  const [sentences, setSentences] = useState("");
-  const [times, setTimes] = useState("");
-  const [speakers, setSpeakers] = useState("");
-  const [questions, setQuestions] = useState("");
-  const [respTime, setRespTime] = useState("");
-  const [numQuestions, setNumQuestions] = useState("");
-  const [labeledQuestions, setLabeledQuestions] = useState("");
-  const [questioningTime, setQuestioningTime] = useState("");
+  const [transcript, setTranscript] = useState();
+  const [sentences, setSentences] = useState();
 
-  const [selectedFile, setSelectedFile] = useState("");
-  const [isSelected, setIsSelected] = useState(false);
+  const [times, setTimes] = useState();
+  const [speakers, setSpeakers] = useState();
+  const [questions, setQuestions] = useState();
+  const [respTime, setRespTime] = useState();
+  const [labeledQuestions, setLabeledQuestions] = useState();
+  const [questioningTime, setQuestioningTime] = useState();
 
-  const endpoint = "http://localhost:5000/upload";
+  const [fileContent, setFileContent] = useState();
+
+  useEffect(() => {
+    if (sentences) {
+      createTranscript();
+      findQuestions();
+      toResponse();
+      printTimes();
+      setCompleted(0);
+      hideModal();
+    }
+  }, [sentences]);
 
   function handleFileChange(event) {
-    setSelectedFile(event.target.files[0]);
-    setIsSelected(true);
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.onloadend = (event) => {
+      setFileContent(event.target.result);
+    };
   }
 
-  let handleSubmission = () => {
+  let handleSubmission = async () => {
     showModal();
 
     let interval = setInterval(() => {
@@ -49,28 +63,20 @@ export default function Submission() {
       }
     }, 2000);
 
-    const data = new FormData();
-    data.append("file", selectedFile);
-    axios.post(endpoint, data).then((res) => {
-      console.log("res: ", res);
-      it = 0;
-      setSentences(res.data.sentences);
-      createTranscript(res.data.sentences);
-      findQuestions(res.data.sentences);
-      toResponse(res.data.sentences)
-      printTimes(res.data.sentences);
-      setCompleted(0);
-      hideModal();
-    });
+    const audioUrl = await uploadFile(fileContent);
+    const transcriptionResult = await transcribeFile(audioUrl);
+    console.log("transcriptionResult: ", transcriptionResult);
+    setSentences(transcriptionResult);
   };
 
-  function createTranscript(sentences) {
+  function createTranscript() {
     let transcript = "";
-    for (let i = 0; i < sentences.length; i++) {
-      transcript += " " + sentences[i].text;
+    if (sentences) {
+      for (let i = 0; i < sentences.length; i++) {
+        transcript += " " + sentences[i].text;
+      }
+      setTranscript(transcript);
     }
-    setTranscript(transcript);
-    return transcript;
   }
 
   let it = 0;
@@ -92,96 +98,100 @@ export default function Submission() {
     bsModal.hide();
   };
 
-  function findQuestions(sentences) {
+  function findQuestions() {
     let qs = [];
-    for (let i = 0; i < sentences.length; i++) {
-      if (sentences[i].text.includes("?")) {
-        qs.push(sentences[i]);
-      }
-    }
-    setQuestions(qs);
-    setNumQuestions(qs.length);
-    findQuestionsLabels(qs);
-    return qs;
-  }
-
-  function toResponse(sentences) {
-    const qs = {};
-
-    // iterate through the sentences and find the questions
-    for (let i = 0; i < sentences.length; i++) {
-      //const sentence = sentences[i];
-      if (sentences[i].text.includes("?")) {
-        qs[sentences[i].end] = sentences[i];
-      }
-    }
-
-    //console.log(qs)
-
-    // iterate through the sentences again and find the responses to the questions
-    const responses = [];
-    let lastq = 999999999
-    let spek = ""
-    let passable = false
-    for (let i = 0; i < sentences.length; i++) {
-      //const sentence = sentences[i];
-      if (sentences[i].text.includes("?")) {
-        // this is a question, so skip it
-        lastq = sentences[i].end
-        spek = sentences[i].speaker
-        passable = true
-        continue;
-      }
-      if (sentences[i].start > lastq && sentences[i].speaker !== spek && passable) {
-        // this is a response to a question, so add it to the responses list
-        //console.log(sentences[i].speaker)
-        //console.log(spek)
-        responses.push(sentences[i]);
-        passable = false
-      }
-    }
-
-    const stamps = {}
-    let currR
-    let currQ
-
-    for (let q in qs) {
-      stamps[q] = "No Response"
-    }
-
-    for (let i = 0; i < responses.length; i++) {
-      currR = responses[i].start
-      for (let s in qs) {
-        if (qs[s].end < currR) {
-          currQ = qs[s].end
+    if (sentences) {
+      for (let i = 0; i < sentences.length; i++) {
+        if (sentences[i].text.includes("?")) {
+          qs.push(sentences[i]);
         }
       }
-      stamps[currQ] = convertMsToTime((currR - currQ))
+      setQuestions(qs);
+      findQuestionsLabels(qs);
+      return qs;
     }
-
-    console.log(stamps)
-    // return the list of responses
-    console.log(responses)
-    setRespTime(stamps)
-    return stamps;
   }
 
-  function printTimes(sentences) {
-    let sStamps = [];
-    let speaks = [];
-    let qDur = 0;
-    for (let i = 0; i < sentences.length; i++) {
-      if (sentences[i].text.includes("?")) {
-        qDur += sentences[i].end - sentences[i].start;
-        sStamps.push(convertMsToTime(sentences[i].start));
-        speaks.push(sentences[i].speaker);
+  function toResponse() {
+    const qs = {};
+
+    if (sentences) {
+      // iterate through the sentences and find the questions
+      for (let i = 0; i < sentences.length; i++) {
+        //const sentence = sentences[i];
+        if (sentences[i].text.includes("?")) {
+          qs[sentences[i].end] = sentences[i];
+        }
       }
+
+      //
+
+      // iterate through the sentences again and find the responses to the questions
+      const responses = [];
+      let lastq = 999999999;
+      let spek = "";
+      let passable = false;
+      for (let i = 0; i < sentences.length; i++) {
+        //const sentence = sentences[i];
+        if (sentences[i].text.includes("?")) {
+          // this is a question, so skip it
+          lastq = sentences[i].end;
+          spek = sentences[i].speaker;
+          passable = true;
+          continue;
+        }
+        if (sentences[i].start > lastq && sentences[i].speaker !== spek && passable) {
+          // this is a response to a question, so add it to the responses list
+          //
+          //
+          responses.push(sentences[i]);
+          passable = false;
+        }
+      }
+
+      const stamps = {};
+      let currR;
+      let currQ;
+
+      for (let q in qs) {
+        stamps[q] = "No Response";
+      }
+
+      for (let i = 0; i < responses.length; i++) {
+        currR = responses[i].start;
+        for (let s in qs) {
+          if (qs[s].end < currR) {
+            currQ = qs[s].end;
+          }
+        }
+        stamps[currQ] = convertMsToTime(currR - currQ);
+      }
+
+      // return the list of responses
+
+      setRespTime(stamps);
+      return stamps;
     }
-    it = 0;
-    setQuestioningTime(convertMsToTime(qDur));
-    setTimes(sStamps);
-    setSpeakers(speaks);
-    return sStamps;
+  }
+
+  function printTimes() {
+    if (sentences) {
+      let sStamps = [];
+      let speaks = [];
+      let qDur = 0;
+      for (let i = 0; i < sentences.length; i++) {
+        if (sentences[i].text.includes("?")) {
+          qDur += sentences[i].end - sentences[i].start;
+          sStamps.push(convertMsToTime(sentences[i].start));
+          speaks.push(sentences[i].speaker);
+        }
+      }
+      it = 0;
+      setQuestioningTime(convertMsToTime(qDur));
+      setTimes(sStamps);
+      setSpeakers(speaks);
+      return sStamps;
+    }
   }
 
   function padTo2Digits(num) {
@@ -289,28 +299,32 @@ export default function Submission() {
 
   function getAmountOfLabel(label) {
     let amount = 0;
-    for (let i = 0; i < labeledQuestions.length; i++) {
-      if (labeledQuestions[i] == label) {
-        amount++;
+    if (labeledQuestions) {
+      for (let i = 0; i < labeledQuestions.length; i++) {
+        if (labeledQuestions[i] == label) {
+          amount++;
+        }
       }
+      return amount;
     }
-    return amount;
   }
 
   function getMaxSpeaker() {
-    let speakTimeList1 = totalSpeakers(sentences);
+    let speakTimeList1 = totalSpeakers();
     let maxSpeakerName = "";
     let maxSpeakerDuration = 0;
     let tempSpeaker = 0;
-    for (let i = 0; i < speakTimeList1.length; i++) {
-      tempSpeaker = getSpeakingTime(speakTimeList1[i]);
+    if (speakTimeList1) {
+      for (let i = 0; i < speakTimeList1.length; i++) {
+        tempSpeaker = getSpeakingTime(speakTimeList1[i]);
 
-      if (tempSpeaker > maxSpeakerDuration) {
-        maxSpeakerDuration = tempSpeaker;
-        maxSpeakerName = speakTimeList1[i];
+        if (tempSpeaker > maxSpeakerDuration) {
+          maxSpeakerDuration = tempSpeaker;
+          maxSpeakerName = speakTimeList1[i];
+        }
       }
+      return maxSpeakerName;
     }
-    return maxSpeakerName;
   }
 
   function timeObj(x, y) {
@@ -427,27 +441,31 @@ export default function Submission() {
       labels: ["Teacher", "Students", "Non-Speaking"],
     },
     //series: [...speakingTimeList()],
-    series: [getSpeakingTime(getMaxSpeaker()), sumSpeakingTime(sentences) - getSpeakingTime(getMaxSpeaker()), getSpeakingTime("B")],
+    series: [getSpeakingTime(getMaxSpeaker()), sumSpeakingTime() - getSpeakingTime(getMaxSpeaker()), getSpeakingTime("B")],
   };
 
   function speakingTimeList() {
-    let speakingTimeList = [];
-    let speakerList = totalSpeakers(sentences);
+    if (sentences) {
+      let speakingTimeList = [];
+      let speakerList = totalSpeakers();
 
-    for (let i = 0; i < speakerList.length; i++) {
-      speakingTimeList.push(getSpeakingTime(speakerList[i]));
+      for (let i = 0; i < speakerList.length; i++) {
+        speakingTimeList.push(getSpeakingTime(speakerList[i]));
+      }
+
+      //
+      return speakingTimeList;
     }
-
-    //
-    return speakingTimeList;
   }
 
   function getSpeakingTime(speakerName) {
     //
     let speakingTime = 0;
-    for (let i = 0; i < sentences.length; i++) {
-      if (sentences[i].speaker === speakerName) {
-        speakingTime += sentences[i].end - sentences[i].start;
+    if (sentences) {
+      for (let i = 0; i < sentences.length; i++) {
+        if (sentences[i].speaker === speakerName) {
+          speakingTime += sentences[i].end - sentences[i].start;
+        }
       }
     }
     //
@@ -457,68 +475,68 @@ export default function Submission() {
   }
 
   function generatePDF() {
-    let doc = new jsPDF("p", "pt", "letter");
+    if (sentences) {
+      let doc = new jsPDF("p", "pt", "letter");
 
-    let sentenceArray = new Array();
-    for (let i = 0; i < sentences.length; i++) {
-      sentenceArray[i] = new Array(sentences[i].speaker, sentences[i].text, convertMsToTime(sentences[i].end - sentences[i].start));
-    }
-
-    let questionArray = new Array();
-    for (let i = 0; i < questions.length; i++) {
-      //
-      questionArray[i] = new Array(questions[i].text, labeledQuestions[i]);
-      //
-    }
-
-    //let speakTimeArray = new Array();
-    //for(let i = 0; i < questions.length; i++){
-    //speakTimeArray[i] = new Array(speakTimeArray[i].text, "Question Category");
-    //
-    //}
-
-    let y = 10;
-    doc.setLineWidth(2);
-    doc.text(200, (y = y + 30), "Your File Analysis Report");
-    doc.autoTable({
-      head: [["Speaker", "Sentence", "Duration"]],
-      body: sentenceArray,
-      startY: 70,
-      theme: "grid",
-    });
-
-    doc.addPage();
-    doc.autoTable({
-      head: [["Question", "Category"]],
-      body: questionArray,
-      theme: "grid",
-    });
-
-    doc.save("demo.pdf");
-  }
-
-  //functions pasted from Micah Branch
-  function sumSpeakingTime(sentences) {
-    let totalTime = 0;
-    for (let i = 0; i < sentences.length; i++) {
-      totalTime += sentences[i].end - sentences[i].start;
-    }
-    return totalTime;
-  }
-
-  function totalSpeakers(sentences) {
-    let speakerList = [];
-    for (let i = 0; i < sentences.length; i++) {
-      if (!speakerList.includes(sentences[i].speaker)) {
-        speakerList.push(sentences[i].speaker);
+      let sentenceArray = new Array();
+      for (let i = 0; i < sentences.length; i++) {
+        sentenceArray[i] = new Array(sentences[i].speaker, sentences[i].text, convertMsToTime(sentences[i].end - sentences[i].start));
       }
+
+      let questionArray = new Array();
+      for (let i = 0; i < questions.length; i++) {
+        //
+        questionArray[i] = new Array(questions[i].text, labeledQuestions[i]);
+        //
+      }
+
+      //let speakTimeArray = new Array();
+      //for(let i = 0; i < questions.length; i++){
+      //speakTimeArray[i] = new Array(speakTimeArray[i].text, "Question Category");
+      //
+      //}
+
+      let y = 10;
+      doc.setLineWidth(2);
+      doc.text(200, (y = y + 30), "Your File Analysis Report");
+      doc.autoTable({
+        head: [["Speaker", "Sentence", "Duration"]],
+        body: sentenceArray,
+        startY: 70,
+        theme: "grid",
+      });
+
+      doc.addPage();
+      doc.autoTable({
+        head: [["Question", "Category"]],
+        body: questionArray,
+        theme: "grid",
+      });
+
+      doc.save("demo.pdf");
     }
-    //
-    //for (let i = 0; i < speakerList.length; i++) {
-    //
-    //}
-    //
-    return speakerList;
+  }
+
+  function sumSpeakingTime() {
+    if (sentences) {
+      let totalTime = 0;
+      for (let i = 0; i < sentences.length; i++) {
+        totalTime += sentences[i].end - sentences[i].start;
+      }
+      return totalTime;
+    }
+  }
+
+  function totalSpeakers() {
+    let speakerList = [];
+    if (sentences) {
+      for (let i = 0; i < sentences.length; i++) {
+        if (!speakerList.includes(sentences[i].speaker)) {
+          speakerList.push(sentences[i].speaker);
+        }
+      }
+      return speakerList;
+    }
   }
 
   return (
@@ -527,24 +545,9 @@ export default function Submission() {
         <label className="form-label" htmlFor="customFile">
           Please Upload a File for Transcription
         </label>
-        <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
-        {isSelected ? (
-          <div>
-            <p>Filename: {selectedFile.name}</p>
-            <p>Filetype: {selectedFile.type}</p>
-            <p>Size in bytes: {selectedFile.size}</p>
-            <p>lastModifiedDate: {selectedFile.lastModifiedDate.toLocaleDateString()}</p>
-          </div>
-        ) : (
-          <p>Select a file to show details</p>
-        )}
-        <button
-          type="button"
-          className="btn btn-primary"
-          data-bs-toggle="modal"
-          data-bs-target="#progressModal"
-          onClick={() => handleSubmission({ selectedFile })}
-        >
+        <input type="file" className="form-control" id="customFile" accept="audio/*,video/*" onChange={handleFileChange} />
+
+        <button type="button" className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#progressModal" onClick={handleSubmission}>
           Submit
         </button>
         <div className="addEmployee">
@@ -578,7 +581,7 @@ export default function Submission() {
           </div>
         </div>
       </div>
-      {sentences ? (
+      {sentences && (
         <div>
           <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
             <h1>Full Transcript</h1>
@@ -611,70 +614,73 @@ export default function Submission() {
                       </tr>
                     </thead>
                     <tbody>
-                      {questions.map((question, index) => (
-                        <tr>
-                          <td>{times[index]}</td>
-                          <td>"{question.text}"</td>
-                          <td>{speakers[index]}</td>
-                          <td>{respTime[question.end]}</td>
-                          <td>{labeledQuestions[index]}</td>
-                          <td>
-                            <Dropdown>
-                              <Dropdown.Toggle variant="sm" id="dropdown-basic">
-                                Select Type
-                              </Dropdown.Toggle>
+                      {questions &&
+                        questions.map((question, index) => (
+                          <tr>
+                            <td>{times[index]}</td>
+                            <td>"{question.text}"</td>
+                            <td>{speakers[index]}</td>
+                            <td>{respTime[question.end]}</td>
+                            <td>{labeledQuestions[index]}</td>
+                            <td>
+                              <Dropdown>
+                                <Dropdown.Toggle variant="sm" id="dropdown-basic">
+                                  Select Type
+                                </Dropdown.Toggle>
 
-                              <Dropdown.Menu>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Knowledge");
-                                  }}
-                                >
-                                  Knowledge
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Understand");
-                                  }}
-                                >
-                                  Understand
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Apply");
-                                  }}
-                                >
-                                  Apply
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Analyze");
-                                  }}
-                                >
-                                  Analyze
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Evaluate");
-                                  }}
-                                >
-                                  Evaluate
-                                </Dropdown.Item>
-                                <Dropdown.Item
-                                  onClick={() => {
-                                    selectLabel(index, "Create");
-                                  }}
-                                >
-                                  Create
-                                </Dropdown.Item>
-                              </Dropdown.Menu>
-                            </Dropdown>
-                          </td>
-                          <td>
-                            <button type="button" class="btn btn-danger" onClick={() => removeQuestion(index)}>Remove</button>
-                          </td>
-                        </tr>
-                      ))}
+                                <Dropdown.Menu>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Knowledge");
+                                    }}
+                                  >
+                                    Knowledge
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Understand");
+                                    }}
+                                  >
+                                    Understand
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Apply");
+                                    }}
+                                  >
+                                    Apply
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Analyze");
+                                    }}
+                                  >
+                                    Analyze
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Evaluate");
+                                    }}
+                                  >
+                                    Evaluate
+                                  </Dropdown.Item>
+                                  <Dropdown.Item
+                                    onClick={() => {
+                                      selectLabel(index, "Create");
+                                    }}
+                                  >
+                                    Create
+                                  </Dropdown.Item>
+                                </Dropdown.Menu>
+                              </Dropdown>
+                            </td>
+                            <td>
+                              <button type="button" class="btn btn-danger" onClick={() => removeQuestion(index)}>
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
@@ -685,7 +691,7 @@ export default function Submission() {
                 <h2>Number of Questions</h2>
               </div>
               <div className="card-body">
-                <h2>{numQuestions}</h2>
+                <h2>{questions && questions.length}</h2>
               </div>
             </div>
             <div className="card mb-4 box-shadow">
@@ -726,7 +732,7 @@ export default function Submission() {
             </button>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
