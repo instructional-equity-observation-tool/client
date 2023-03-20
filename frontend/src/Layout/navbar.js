@@ -1,5 +1,7 @@
 import React from "react"
 import {Outlet, Link} from "react-router-dom";
+import signOut from "../SignOut/signOut";
+import "../Layout/navbar.css"
 
 export default class Layout extends React.Component {
     render(){
@@ -23,10 +25,7 @@ export default class Layout extends React.Component {
                             <Link to="/account" className="nav-link text-light"> Account</Link>
                         </li>
                         <li className="nav-item">
-                            <Link to="/contact" className="nav-link text-light"> Login</Link>
-                        </li>
-                        <li className="nav-item">
-                            <Link to="/signup" className="nav-link text-light"> Sign Up</Link>
+                            <a className="nav-link text-light" onClick={signOut} id='sign-out'>Sign Out</a>
                         </li>
                     </ul>
                 </div>

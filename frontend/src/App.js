@@ -5,18 +5,21 @@ import Account from "./Account/accountPage";
 
 import Layout from "./Layout/navbar";
 import { Main } from "./Main/mainUserPage";
-import Login from "./Login/login";
-import SignUp from "./SignUp/signUp";
+import LogIn from "./Auth/login";
+import SignUp from "./Auth/signUp";
+import PrivateRoute from "./PrivateRoute";
 
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route path="/" element={<Main />} />
+        <Route exact path="/" element={<Layout />}>
+          {/* <Route exact path='/home' element={<PrivateRoute/>}> */}
+            <Route exact path='/home' render={<Main/>}/>
+          {/* </Route> */}
           <Route path="account" element={<Account />} />
-          <Route path="contact" element={<Login />} />
+          <Route path="login" element={<LogIn />} />
           <Route path="signup" element={<SignUp />} />
         </Route>
       </Routes>

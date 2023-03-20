@@ -92,24 +92,6 @@ export default function Account(){
                                     </div>
                                 </div>
                                 <hr/>
-                                {/* <div className="row">
-                                    <div className="col-sm-3">
-                                        <h6 className="mb-0">Mobile Phone</h6>
-                                    </div>
-                                    <div className="col-sm-9 text-secondary">
-                                    <input  readOnly={true} className="input-test" disabled={true}></input>
-                                    </div>
-                                </div>
-                                <hr/> */}
-                                {/* <div className="row">
-                                    <div className="col-sm-3">
-                                        <h6 className="mb-0">Position</h6>
-                                    </div>
-                                    <div className="col-sm-9 text-secondary">
-                                    <input  readOnly={true} className="input-test" disabled={true}></input>
-                                    </div>
-                                </div>
-                                <hr/> */}
                                 <div className="row">
                                     <div className="col-sm-3">
                                         <h6 className="mb-0">School</h6>
