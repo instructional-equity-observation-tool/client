@@ -288,6 +288,8 @@ export default function Submission() {
   function removeQuestion(idx) {
     let newQuestions = [...questions];
     newQuestions.splice(idx, 1);
+    labeledQuestions.splice(idx, 1);
+    times.splice(idx, 1);
     setQuestions(newQuestions);
   }
 

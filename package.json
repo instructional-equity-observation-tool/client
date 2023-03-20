@@ -24,9 +24,6 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "startAll:server": "node ../backend/index.js",
-    "startAll:client": "npm start",
-    "startAll": "npm-run-all --parallel startAll:server startAll:client",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
