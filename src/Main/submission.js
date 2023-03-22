@@ -338,8 +338,9 @@ export default function Submission() {
   function setTimeChartData() {
     if (sentences) {
       let data = [];
-      for (let i = 0; i < sentences.length; i++) {
-        let timeListObj = new timeObj(sentences[i].speaker, [sentences[i].start / 1000, sentences[i].end / 1000]);
+      for (let i = 0; i < labeledQuestions.length; i++) {
+        //let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, questions[i].end / 1000]);
+        let timeListObj = new timeObj(labeledQuestions[i], i, i+1);
         data.push(timeListObj);
       }
       return data;
@@ -357,7 +358,7 @@ export default function Submission() {
         type: "rangeBar",
       },
       title: {
-        text: "Speaking Timeline",
+        text: "Teacher Question Timeline",
         align: "left",
         style: {
           fontSize: "30px",
@@ -374,6 +375,7 @@ export default function Submission() {
       xaxis: {
         type: "numeric",
       },
+      
     },
   };
 
@@ -719,7 +721,7 @@ export default function Submission() {
                 </td>
               </tr>
               <br></br>
-              {/* <tr>
+              { <tr>
                   <td>
                     <Chart
                       options={timeChartProps.options}
@@ -729,7 +731,7 @@ export default function Submission() {
                       width={1300}
                     />
                   </td>
-                </tr> */}
+                </tr> }
             </div>
           </div>
 
