@@ -1,9 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import '../Account/Account.css'
+import { Auth } from "aws-amplify";
 
 
 export default function Account(){
     const[isEditing, setIsEditing] = useState(false);
+    const[userAttributes, setUserAttributes] = useState({})
+
+    useEffect(() => {
+        retrieveUserInfo();
+    }, []);
 
     function editProfile(){
         setIsEditing(true)
@@ -23,6 +29,13 @@ export default function Account(){
         }
     }
 
+
+    async function retrieveUserInfo(){
+        const user = await Auth.currentAuthenticatedUser();
+        const { attributes } = user;
+        setUserAttributes(attributes)
+    }
+
     return(
         <div className="container">
             <div className="main-body">
@@ -32,7 +45,7 @@ export default function Account(){
                             <div className="card-body">
                                 <div className="d-flex flex-column align-items-center text-center">
                                     <div className="mt-3">
-                                        <h4>John Doe</h4>
+                                        <h4>{userAttributes.name}</h4>
                                         <p className="text-secondary mb-1">Teacher</p>
                                         <p className="text-muted font-size-sm">Pascal High School</p>
                                         {/* <button className="btn btn-primary">Follow</button>
@@ -70,7 +83,7 @@ export default function Account(){
                                         <h6 className="mb-0">Full Name</h6>
                                     </div>
                                     <div className="col-sm-9 text-secondary">
-                                        <input  readOnly={true} className="input-test" disabled={true}></input>
+                                        <input  readOnly={true} className="input-test" disabled={true} value={userAttributes.name}></input>
                                      </div>
                                 </div>
                                 <hr/>
@@ -79,7 +92,7 @@ export default function Account(){
                                         <h6 className="mb-0">Email</h6>
                                     </div>
                                     <div className="col-sm-9 text-secondary">
-                                    <input  readOnly={true} className="input-test" disabled={true}></input>
+                                    <input  readOnly={true} className="input-test" disabled={true} value={userAttributes.email}></input>
                                     </div>
                                 </div>
                                 <hr/>
