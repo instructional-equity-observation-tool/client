@@ -1,10 +1,23 @@
 import React from "react"
 import {Outlet, Link} from "react-router-dom";
-import signOut from "../SignOut/signOut";
+// import signOut from "../SignOut/signOut";
 import "../Layout/navbar.css"
+import { Auth } from "aws-amplify";
+import { useNavigate } from "react-router-dom";
 
-export default class Layout extends React.Component {
-    render(){
+const Layout = () => {
+    let navigate = useNavigate();
+    async function signOut(event){
+        event.preventDefault();
+        try{
+            await Auth.signOut();
+            console.log("Sign out succesfully")
+            navigate("/")
+        }catch (error){
+            console.log('error signing out: ', error);
+        }
+    }
+    
         return(
             <><><nav className="navbar navbar-expand-lg" id="main-nav">
                 <a className="navbar-brand" href="#">
@@ -19,13 +32,13 @@ export default class Layout extends React.Component {
                 <div className="collapse navbar-collapse justify-content-end" id="navbarCollapse">
                     <ul className="navbar-nav">
                         <li className="nav-item">
-                            <Link to="/" className="nav-link text-light"> Home</Link>
+                            <Link to="/home" className="nav-link text-light"> Home</Link>
                         </li>
                         <li className="nav-item">
                             <Link to="/account" className="nav-link text-light"> Account</Link>
                         </li>
                         <li className="nav-item">
-                            <a className="nav-link text-light" onClick={signOut} id='sign-out'>Sign Out</a>
+                            <a className="nav-link text-light" onClick={(e) => signOut(e)} id='sign-out'>Sign Out</a>
                         </li>
                     </ul>
                 </div>
@@ -33,35 +46,9 @@ export default class Layout extends React.Component {
 
                 <Outlet />
                 </>
-                {/* <footer className="py-3 my-4" id="footer">
-                    <ul className="nav justify-content-center border-bottom pb-3 mb-3">
-                        <li className="nav-item">
-                            <a href="#" className="nav-link px-2 text-muted">
-                                Home
-                            </a>
-                        </li>
-                        <li className="nav-item">
-                            <a href="#" className="nav-link px-2 text-muted">
-                                Features
-                            </a>
-                        </li>
-                        <li className="nav-item">
-                            <a href="#" className="nav-link px-2 text-muted">
-                                FAQs
-                            </a>
-                        </li>
-                        <li className="nav-item">
-                            <a href="#" className="nav-link px-2 text-muted">
-                                Pricing
-                            </a>
-                        </li>
-                    </ul>
-                    <p className="text-center text-muted">
-                        © 2022 Instructional Equity Observation Tool, Inc
-                    </p>
-                </footer> */}
                 
                 </>
         )
-    }
 }
+
+export default Layout;
