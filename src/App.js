@@ -11,7 +11,7 @@ import ConfirmRegister from "./SignUp/ConfirmRegister";
 // import PrivateRoute from "./PrivateRoute";
 import { withAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
-import awsconfig from './client-main/aws-exports'
+import awsconfig from './aws-exports'
 import { Amplify } from "aws-amplify";
 Amplify.configure(awsconfig);
 
