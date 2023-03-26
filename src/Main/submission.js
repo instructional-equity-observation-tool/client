@@ -336,12 +336,27 @@ export default function Submission() {
   }
 
   function setTimeChartData() {
-    if (sentences) {
+    if (labeledQuestions) {
       let data = [];
-      for (let i = 0; i < labeledQuestions.length; i++) {
-        //let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, questions[i].end / 1000]);
-        let timeListObj = new timeObj(labeledQuestions[i], i, i+1);
+      //console.log("labeledQuestions: ", labeledQuestions);
+      //make initial rows
+      let categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
+      for (let i = 0; i < categories.length; i++) {
+        let timeListObj = new timeObj(categories[i], [0,0]);
         data.push(timeListObj);
+      }
+
+      for (let i = 0; i < labeledQuestions.length; i++) {
+        if (categories.includes(labeledQuestions[i])) {
+          //if(convertMsToTime(((questions[i].end / 1000) - (questions[i].start / 1000))) < 5){
+            //let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 2]);
+            //data.push(timeListObj);
+          //}
+          //else{
+            let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 5]);
+            data.push(timeListObj);
+          //}
+        }
       }
       return data;
     }
@@ -375,7 +390,14 @@ export default function Submission() {
       xaxis: {
         type: "numeric",
       },
-      
+      yaxis: {
+        labels: {
+          style: {
+            fontSize: "20px",
+          },
+        },
+        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"],
+      },
     },
   };
 
