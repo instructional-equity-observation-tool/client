@@ -47,7 +47,7 @@ export default function Account(){
                                     <div className="mt-3">
                                         <h4>{userAttributes.name}</h4>
                                         <p className="text-secondary mb-1">Teacher</p>
-                                        <p className="text-muted font-size-sm">Pascal High School</p>
+                                        <p className="text-muted font-size-sm">{userAttributes['custom:school']}</p>
                                         {/* <button className="btn btn-primary">Follow</button>
                                         <button className="btn btn-outline-primary">Message</button> */}
                                     </div>
@@ -98,19 +98,19 @@ export default function Account(){
                                 <hr/>
                                 <div className="row">
                                     <div className="col-sm-3">
-                                         <h6 className="mb-0">Phone</h6>
+                                         <h6 className="mb-0">School</h6>
                                     </div>
                                     <div className="col-sm-9 text-secondary">
-                                    <input  readOnly={true} className="input-test" disabled={true}></input>
+                                    <input  readOnly={true} className="input-test" disabled={true} value={userAttributes['custom:school']}></input>
                                     </div>
                                 </div>
                                 <hr/>
                                 <div className="row">
                                     <div className="col-sm-3">
-                                        <h6 className="mb-0">School</h6>
+                                        <h6 className="mb-0">Grade Level</h6>
                                     </div>
                                     <div className="col-sm-9 text-secondary">
-                                    <input  readOnly={true} className="input-test" disabled={true}></input>
+                                    <input  readOnly={true} className="input-test" disabled={true} value={userAttributes['custom:grade_level']}></input>
                                     </div>
                                 </div>
                                 <hr/>
