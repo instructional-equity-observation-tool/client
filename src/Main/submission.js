@@ -16,6 +16,7 @@ import Dropdown from "react-bootstrap/Dropdown";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Chart from "react-apexcharts";
+import "./transcript.scss"
 
 export default function Submission() {
   const [completed, setCompleted] = useState(0);
@@ -595,9 +596,9 @@ export default function Submission() {
             <div className="lead">
               {sentences.map((sentence) => (
                 <p className="sentence">
-                  <span className="transcript-time">{convertMsToTime(sentence.start)}</span>
-                  <span className="transcript-speaker">Speaker {sentence.speaker} :</span>
-                  <span className="transcript-text">"{sentence.text}"</span>
+                  <span className={`transcript-time speaker-${sentence.speaker}`}>{convertMsToTime(sentence.start)}</span>
+                  <span className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker} :</span>
+                  <span className={`transcript-text speaker-${sentence.speaker}`}>"{sentence.text}"</span>
                 </p>
               ))}
             </div>
