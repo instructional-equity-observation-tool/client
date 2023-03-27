@@ -374,7 +374,7 @@ export default function Submission() {
         type: "rangeBar",
       },
       title: {
-        text: "Speaking Timeline",
+        text: "Teacher Question Timeline",
         align: "left",
         style: {
           fontSize: "30px",
@@ -390,6 +390,14 @@ export default function Submission() {
       },
       xaxis: {
         type: "numeric",
+      },
+      yaxis: {
+        labels: {
+          style: {
+            fontSize: "20px",
+          },
+        },
+        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"],
       },
     },
   };
@@ -742,7 +750,7 @@ export default function Submission() {
                 </td>
               </tr>
               <br></br>
-              {/* <tr>
+              { <tr>
                   <td>
                     <Chart
                       options={timeChartProps.options}
@@ -752,7 +760,7 @@ export default function Submission() {
                       width={1300}
                     />
                   </td>
-                </tr> */}
+                </tr> }
             </div>
           </div>
 
