@@ -11,6 +11,8 @@ const SignUp = () => {
         name: '',
         username: '',
         password: '',
+        school: '',
+        grade_level: '',
         authCode: '',
     })
 
@@ -29,7 +31,9 @@ const SignUp = () => {
                 password: user.password,
                 attributes: {
                     name: user.name,
-                    email: user.username
+                    email: user.username,
+                    'custom:school': user.school,
+                    'custom:grade_level': user.grade_level,
                 },
                     autoSignIn: {
                         enabled: true,
@@ -65,7 +69,27 @@ const SignUp = () => {
                      placeholder="Email"
                      onChange={(e) => handleInputChange(e, 'username')}/>
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-4">
+                    <label htmlFor="inputAddress2" className="form-label">School</label>
+                    <input 
+                    type="text" 
+                    className="form-control" 
+                    id="inputAddress2" 
+                    value={user.school} 
+                    placeholder="School"
+                    onChange={(e) => handleInputChange(e, 'school')}/>
+                </div>
+                <div className="col-md-4">
+                    <label htmlFor="inputAddress2" className="form-label">Grade Level</label>
+                    <input 
+                    type="text" 
+                    className="form-control" 
+                    id="inputAddress2" 
+                    value={user.grade_level} 
+                    placeholder="Grade Level (e.g. fourth, second)"
+                    onChange={(e) => handleInputChange(e, 'grade_level')}/>
+                </div>
+                <div className="col-md-4">
                     <label htmlFor="inputAddress2" className="form-label">Password*</label>
                     <input 
                     type="text" 
