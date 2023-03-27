@@ -359,19 +359,19 @@ export default function Submission() {
       //make initial rows
       let categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
       for (let i = 0; i < categories.length; i++) {
-        let timeListObj = new timeObj(categories[i], [0,0]);
+        let timeListObj = new timeObj(categories[i], [0, 0]);
         data.push(timeListObj);
       }
 
       for (let i = 0; i < labeledQuestions.length; i++) {
         if (categories.includes(labeledQuestions[i])) {
           //if(convertMsToTime(((questions[i].end / 1000) - (questions[i].start / 1000))) < 5){
-            //let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 2]);
-            //data.push(timeListObj);
+          //let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 2]);
+          //data.push(timeListObj);
           //}
           //else{
-            let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 5]);
-            data.push(timeListObj);
+          let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 5]);
+          data.push(timeListObj);
           //}
         }
       }
@@ -488,7 +488,7 @@ export default function Submission() {
   };
 
   function getNonSpeakingTime(sentences) {
-    if(sentences)
+    if (sentences)
       return (sentences[sentences.length - 1].end - sentences[0].start) - sumSpeakingTime(sentences);
   }
 
@@ -569,41 +569,41 @@ export default function Submission() {
     }
   }
 
-  return(
+  return (
     <div>
-        <div>
+      <div>
         <label className="form-label" htmlFor="customFile">
-            <h4>Please Upload a File for Transcription</h4>
-            <p>.MTS files are not compatible with the video player feature. Please convert to .mp4 file</p>
+          <h4>Please Upload a File for Transcription</h4>
+          <p>.MTS files are not compatible with the video player feature. Please convert to .mp4 file</p>
         </label>
-        <input type="file" className="form-control" id="customFile" onChange={handleFileChange}/>
+        <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
         {isAudio ? (
-        <div>
+          <div>
             <audio controls id="audio-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </audio>
-        </div>
+          </div>
         ) : (
-        <p></p>
+          <p></p>
         )}
         {isVideo ? (
-        <div>
+          <div>
             <video controls id="video-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </video>
-        </div>
+          </div>
         ) : (
-        <p></p>
+          <p></p>
         )}
         <button
-            type="button"
-            className="btn btn-primary"
-            data-bs-toggle="modal"
-            data-bs-target="#progressModal"
-            onClick={() => handleSubmission({selectedFile})}
-          >
-            Submit
-          </button>
+          type="button"
+          className="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#progressModal"
+          onClick={() => handleSubmission({ selectedFile })}
+        >
+          Submit
+        </button>
         <div className="addEmployee">
           <div className="modal fade" ref={modalRef} tabIndex="-1" style={{ marginTop: "115px" }}>
             <div className="modal-dialog">
@@ -639,17 +639,22 @@ export default function Submission() {
         <div>
           <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
             <h1>Full Transcript</h1>
-            <div className="lead">
-              {sentences.map((sentence) => (
-                <p className="sentence">
-                  <span className="transcript-time">{convertMsToTime(sentence.start)}</span>
-                  <span className="transcript-speaker">Speaker {sentence.speaker} :</span>
-                  <span className="transcript-text">"{sentence.text}"</span>
-                </p>
-              ))}
+            <div className="lead" style={{ backgroundColor: "white" }}>
+              <table className="transcriptTable">
+                {sentences.map((sentence) => (
+                  <tbody>
+                    <p className="sentence">
+                      <tr>
+                        <td className="transcript-time">{convertMsToTime(sentence.start)}</td>
+                        <td className="transcript-speaker">Speaker {sentence.speaker}:</td>
+                        <td className="transcript-text">{sentence.text}</td>
+                      </tr>
+                    </p>
+                  </tbody>
+                ))}
+              </table>
             </div>
           </div>
-
           <div className="card-deck mb-3 text-center">
             <div className="card mb-4 box-shadow">
               <div className="card-header">
@@ -766,17 +771,17 @@ export default function Submission() {
                 </td>
               </tr>
               <br></br>
-              { <tr>
-                  <td>
-                    <Chart
-                      options={timeChartProps.options}
-                      series={timeChartProps.series}
-                      type="rangeBar"
-                      height={600}
-                      width={1300}
-                    />
-                  </td>
-                </tr> }
+              {<tr>
+                <td>
+                  <Chart
+                    options={timeChartProps.options}
+                    series={timeChartProps.series}
+                    type="rangeBar"
+                    height={600}
+                    width={1300}
+                  />
+                </td>
+              </tr>}
             </div>
           </div>
 

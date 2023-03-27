@@ -14,3 +14,21 @@
   max-width: 500px;
   max-height: 500px;
 }
+
+.sentence {
+  padding: 10px;
+}
+
+.transcript-time {
+  text-align: left;
+}
+
+.transcript-speaker {
+  text-align: left;
+  padding-left: 2em;
+}
+
+.transcript-text {
+  width: calc(100% - 200px);
+  text-indent: 1em;
+}
