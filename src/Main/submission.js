@@ -460,25 +460,15 @@ export default function Submission() {
       labels: ["Teacher", "Students", "Non-Speaking"],
     },
     //series: [...speakingTimeList()],
-    series: [getSpeakingTime(getMaxSpeaker()), sumSpeakingTime() - getSpeakingTime(getMaxSpeaker()), getSpeakingTime("B")],
+    series: [getSpeakingTime(getMaxSpeaker()), sumSpeakingTime() - getSpeakingTime(getMaxSpeaker()), getNonSpeakingTime(sentences)],
   };
 
-  function speakingTimeList() {
-    if (sentences) {
-      let speakingTimeList = [];
-      let speakerList = totalSpeakers();
-
-      for (let i = 0; i < speakerList.length; i++) {
-        speakingTimeList.push(getSpeakingTime(speakerList[i]));
-      }
-
-      //
-      return speakingTimeList;
-    }
+  function getNonSpeakingTime(sentences) {
+    if(sentences)
+      return (sentences[sentences.length - 1].end - sentences[0].start) - sumSpeakingTime(sentences);
   }
 
   function getSpeakingTime(speakerName) {
-    //
     let speakingTime = 0;
     if (sentences) {
       for (let i = 0; i < sentences.length; i++) {
@@ -487,9 +477,6 @@ export default function Submission() {
         }
       }
     }
-    //
-    //
-    //
     return speakingTime;
   }
 
