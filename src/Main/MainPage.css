@@ -16,7 +16,8 @@
 }
 
 .sentence {
-  padding: 10px;
+  padding: 5px 10px;
+  margin-left: 10px;
 }
 
 .transcript-time {
@@ -24,11 +25,22 @@
 }
 
 .transcript-speaker {
-  text-align: left;
-  padding-left: 2em;
+  padding: 0 1em;
+  width: 140px;
 }
 
 .transcript-text {
+  text-align: justify;
   width: calc(100% - 200px);
-  text-indent: 1em;
+}
+
+.card-body {
+  height: 400px;
+  overflow-y: scroll;
+}
+
+.question-options {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
 }

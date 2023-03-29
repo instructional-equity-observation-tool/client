@@ -49,17 +49,17 @@ export default function Submission() {
 
   function handleFileChange(event) {
     const file = event.target.files[0];
-    setSelectedFile(event.target.files[0])
+    setSelectedFile(event.target.files[0]);
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
     reader.onloadend = (event) => {
       setFileContent(event.target.result);
     };
-    const type = file.type
-    if (type.includes('audio')) {
+    const type = file.type;
+    if (type.includes("audio")) {
       setIsAudio(true);
       setIsVideo(false);
-    } else if (type.includes('video')) {
+    } else if (type.includes("video")) {
       setIsVideo(true);
       setIsAudio(false);
     } else {
@@ -233,69 +233,30 @@ export default function Submission() {
   }
 
   function findQuestionsLabels(quests) {
-    let labeled = new Array(quests.length);
+    const categoryMap = {
+      Knowledge: knowledgeArray,
+      Analyze: analyzeArray,
+      Apply: applyArray,
+      Create: createArray,
+      Evaluate: evaluateArray,
+      Understand: understandArray,
+    };
 
-    for (let j = 0; j < labeled.length; j++) {
-      labeled[j] = "";
-    }
+    const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
 
-    for (let i = 0; i < quests.length; i++) {
-      for (let j = 0; j < quests[i].words.length; j++) {
-        let tempWord = quests[i].words[j].text.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
+    const findCategories = (word) =>
+      Object.keys(categoryMap)
+        .filter((key) => categoryMap[key].includes(word))
+        .join(" or ");
 
-        if (knowledgeArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Knowledge";
-          } else if (!labeled[i].includes("Knowledge")) {
-            labeled[i] += " or Knowledge";
-          }
-        }
+    const labeled = quests.map((quest) => {
+      const categories = quest.words
+        .map((wordObj) => sanitizeWord(wordObj.text))
+        .map(findCategories)
+        .filter((category) => category.length > 0);
 
-        if (analyzeArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Analyze";
-          } else {
-            labeled[i] += " or Analyze";
-          }
-        }
-
-        if (applyArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Apply";
-          } else if (!labeled[i].includes("Apply")) {
-            labeled[i] += " or Apply";
-          }
-        }
-
-        if (createArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Create";
-          } else if (!labeled[i].includes("Create")) {
-            labeled[i] += " or Create";
-          }
-        }
-
-        if (evaluateArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Evaluate";
-          } else if (!labeled[i].includes("Evaluate")) {
-            labeled[i] += " or Evaluate";
-          }
-        }
-
-        if (understandArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Understand";
-          } else if (!labeled[i].includes("Understand")) {
-            labeled[i] += " or Understand";
-          }
-        }
-      }
-
-      if (labeled[i] === "") {
-        labeled[i] = "Non-Bloom's";
-      }
-    }
+      return categories.length > 0 ? categories.join(" or ") : "Uncategorized";
+    });
 
     setLabeledQuestions(labeled);
 
@@ -370,7 +331,7 @@ export default function Submission() {
           //data.push(timeListObj);
           //}
           //else{
-          let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 5]);
+          let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, questions[i].start / 1000 + 5]);
           data.push(timeListObj);
           //}
         }
@@ -488,8 +449,7 @@ export default function Submission() {
   };
 
   function getNonSpeakingTime(sentences) {
-    if (sentences)
-      return (sentences[sentences.length - 1].end - sentences[0].start) - sumSpeakingTime(sentences);
+    if (sentences) return sentences[sentences.length - 1].end - sentences[0].start - sumSpeakingTime(sentences);
   }
 
   function getSpeakingTime(speakerName) {
@@ -660,6 +620,10 @@ export default function Submission() {
               <div className="card-header">
                 <h2>Questions</h2>
               </div>
+              <div className="card-header">
+                <h5>Number of Questions: {questions && questions.length}</h5>
+                <h5>Total Questioning Time: {questioningTime}</h5>
+              </div>
               <div className="card-body">
                 <div className="container">
                   <table className="table">
@@ -675,13 +639,13 @@ export default function Submission() {
                     <tbody>
                       {questions &&
                         questions.map((question, index) => (
-                          <tr>
+                          <tr className="question">
                             <td>{times[index]}</td>
                             <td>"{question.text}"</td>
                             <td>{speakers[index]}</td>
                             <td>{respTime[question.end]}</td>
                             <td>{labeledQuestions[index]}</td>
-                            <td>
+                            <div className="question-options">
                               <Dropdown>
                                 <Dropdown.Toggle variant="sm" id="dropdown-basic">
                                   Select Type
@@ -732,33 +696,15 @@ export default function Submission() {
                                   </Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
-                            </td>
-                            <td>
                               <button type="button" class="btn btn-danger" onClick={() => removeQuestion(index)}>
                                 Remove
                               </button>
-                            </td>
+                            </div>
                           </tr>
                         ))}
                     </tbody>
                   </table>
                 </div>
-              </div>
-            </div>
-            <div className="card mb-4 box-shadow">
-              <div className="card-header">
-                <h2>Number of Questions</h2>
-              </div>
-              <div className="card-body">
-                <h2>{questions && questions.length}</h2>
-              </div>
-            </div>
-            <div className="card mb-4 box-shadow">
-              <div className="card-header">
-                <h2>Total Questioning Time</h2>
-              </div>
-              <div className="card-body">
-                <h2>{questioningTime}</h2>
               </div>
             </div>
             <div>
@@ -771,17 +717,13 @@ export default function Submission() {
                 </td>
               </tr>
               <br></br>
-              {<tr>
-                <td>
-                  <Chart
-                    options={timeChartProps.options}
-                    series={timeChartProps.series}
-                    type="rangeBar"
-                    height={600}
-                    width={1300}
-                  />
-                </td>
-              </tr>}
+              {
+                <tr>
+                  <td>
+                    <Chart options={timeChartProps.options} series={timeChartProps.series} type="rangeBar" height={600} width={1300} />
+                  </td>
+                </tr>
+              }
             </div>
           </div>
 
