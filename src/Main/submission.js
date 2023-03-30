@@ -444,7 +444,6 @@ export default function Submission() {
       },
       labels: ["Teacher", "Students", "Non-Speaking"],
     },
-    //series: [...speakingTimeList()],
     series: [getSpeakingTime(getMaxSpeaker()), sumSpeakingTime() - getSpeakingTime(getMaxSpeaker()), getNonSpeakingTime(sentences)],
   };
 
@@ -475,16 +474,8 @@ export default function Submission() {
 
       let questionArray = new Array();
       for (let i = 0; i < questions.length; i++) {
-        //
         questionArray[i] = new Array(questions[i].text, labeledQuestions[i]);
-        //
       }
-
-      //let speakTimeArray = new Array();
-      //for(let i = 0; i < questions.length; i++){
-      //speakTimeArray[i] = new Array(speakTimeArray[i].text, "Question Category");
-      //
-      //}
 
       let y = 10;
       doc.setLineWidth(2);
@@ -717,13 +708,11 @@ export default function Submission() {
                 </td>
               </tr>
               <br></br>
-              {
-                <tr>
-                  <td>
-                    <Chart options={timeChartProps.options} series={timeChartProps.series} type="rangeBar" height={600} width={1300} />
-                  </td>
-                </tr>
-              }
+              <tr>
+                <td>
+                  <Chart options={timeChartProps.options} series={timeChartProps.series} type="rangeBar" height={600} width={1300} />
+                </td>
+              </tr>
             </div>
           </div>
 
