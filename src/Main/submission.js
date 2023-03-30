@@ -381,6 +381,11 @@ export default function Submission() {
 
   const barChartProps = {
     options: {
+      //plotOptions: {
+        //bar: {
+          //distributed: true
+        //}
+      //},
       title: {
         text: "Question Category Distribution",
         align: "left",
@@ -408,19 +413,46 @@ export default function Submission() {
         categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create", "Uncategorized"],
       },
     },
-    series: [
-      {
-        data: [
-          getAmountOfLabel("Knowledge"),
-          getAmountOfLabel("Understand"),
-          getAmountOfLabel("Apply"),
-          getAmountOfLabel("Analyze"),
-          getAmountOfLabel("Evaluate"),
-          getAmountOfLabel("Create"),
-          getAmountOfLabel("Uncategorized"),
-        ],
-      },
-    ],
+    series: [{
+      data: [
+        {
+          x: "Knowledge",
+          y: getAmountOfLabel("Knowledge"),
+          fillColor: '#0000FF',
+          strokeColor: '#000000'
+        }, {
+          x: "Understand",
+          y: getAmountOfLabel("Understand"),
+          fillColor: '#D42AC8',
+          strokeColor: '#C23829'
+        }, {
+          x: "Apply", 
+          y: getAmountOfLabel("Apply"),
+          fillColor: '#009400',
+          strokeColor: '#C23829'
+        }, {
+          x: "Analyze",
+          y: getAmountOfLabel("Analyze"),
+          fillColor: '#FF7300',
+          strokeColor: '#C23829'
+        }, {
+          x: "Evaluate",
+          y: getAmountOfLabel("Evaluate"),
+          fillColor: '#FFC400',
+          strokeColor: '#000000'
+        }, {
+          x: "Create",
+          y: getAmountOfLabel("Create"),
+          fillColor: '#7C7670',
+          strokeColor: '#C23829'
+        }, {
+          x: "Uncategorized",
+          y: getAmountOfLabel("Uncategorized"),
+          fillColor: '#FF0000',
+          strokeColor: '#C23829'
+        }
+      ]  
+    }]
   };
 
   const pieChartProps = {
