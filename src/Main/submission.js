@@ -405,7 +405,7 @@ export default function Submission() {
             fontSize: "20px",
           },
         },
-        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"],
+        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create", "Uncategorized"],
       },
     },
     series: [
@@ -417,6 +417,7 @@ export default function Submission() {
           getAmountOfLabel("Analyze"),
           getAmountOfLabel("Evaluate"),
           getAmountOfLabel("Create"),
+          getAmountOfLabel("Uncategorized"),
         ],
       },
     ],
