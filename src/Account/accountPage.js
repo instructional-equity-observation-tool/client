@@ -2,10 +2,16 @@ import React, { useEffect, useState } from "react";
 import '../Account/Account.css'
 import { Auth } from "aws-amplify";
 import { Storage } from "@aws-amplify/storage"
+import AWS from "aws-sdk";
+import {Buffer} from "buffer";
+import Submission from "../Main/submission";
+import { useNavigate } from "react-router-dom";
 
 export default function Account(){
     const[isEditing, setIsEditing] = useState(false);
     const[userAttributes, setUserAttributes] = useState({});
+    const navigate = useNavigate();
+    const [report, setReport] = useState({})
     const [userObj, setUserObj] = useState({
         name: '',
         username: '',
@@ -24,7 +30,10 @@ export default function Account(){
 
     useEffect(() => {
         retrieveUserInfo();
+        retrieveReports();
     }, []);
+
+
 
     function editProfile(){
         setIsEditing(true)
@@ -75,8 +84,41 @@ export default function Account(){
             state: attributes['custom:state'],
             zip: attributes['custom:zip'],
         });
-
     }
+
+    async function retrieveReports(){
+        AWS.config.update({ 
+            region: 'us-east-2',
+            apiVersion: 'latest',
+            credentials: {
+              accessKeyId: process.env.REACT_APP_ACCESS_KEY_ID,
+              secretAccessKey: process.env.REACT_APP_SECRET_ID,
+            } 
+          });
+        const s3 = new AWS.S3();
+        const user = await Auth.currentAuthenticatedUser();
+        const location = user.username + '/sam-test-file'
+        console.log(location)
+        let params = {
+            Bucket: 'user-analysis-objs183943-staging',
+            Key: location,
+            ResponseContentType: 'application/json'
+        }
+       s3.getObject(params, function (err, data){
+            if(err) throw err;
+            console.log(data)
+            console.log(data.Body)
+            console.log(JSON.parse(data.Body))
+            setReport(JSON.parse(data.Body));
+        })
+    }
+
+    function loadUserReport(event){
+        event.preventDefault();
+    }
+
+
+
 
     return(
         <div className="container">
@@ -102,7 +144,7 @@ export default function Account(){
                                     <h4>My Reports</h4>
                                 </li>
                                 <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
-                                    <p>PDF1</p>
+                                    <button className="btn btn-primary" onClick={(e) => loadUserReport(e)}>PDF1</button>
                                 </li>
                                 <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
                                     <p>PDF2</p>

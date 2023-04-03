@@ -37,6 +37,8 @@ export default function Submission() {
   const [isVideo, setIsVideo] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
 
+  const [reportName, setReportName] = useState("");
+
   const [fileContent, setFileContent] = useState();
 
   useEffect(() => {
@@ -52,6 +54,11 @@ export default function Submission() {
   }, [sentences]);
 
 
+  function handleInputChange(event){
+    event.persist();
+    setReportName(event.target.value);
+  }
+
   async function saveUserObject(){
     AWS.config.update({ 
       region: 'us-east-2',
@@ -65,14 +72,18 @@ export default function Submission() {
     var userObject = sentences;
     var buf = Buffer.from(JSON.stringify(userObject));
     const user = await Auth.currentAuthenticatedUser();
-    console.log(user);
+    console.log(user.username);
+    const folderName = user.username;
+    console.log(reportName)
+    const location = folderName + "/" + reportName;
+    console.log(location)
     var data = {
       Bucket: 'user-analysis-objs183943-staging',
-      Key: 'thisUserFolder/032723_recording',
-      Body: buf,
+      Key: location,
+      Body: JSON.stringify(sentences),
       ContentEncoding: 'base64',
       ContentType: 'application/json',
-      ACL: 'public-read'
+      ACL: 'public-read',
     }; 
     s3.putObject(data, function (err, data) {
       if (err) {
@@ -107,6 +118,7 @@ export default function Submission() {
 
   let handleSubmission = async () => {
     showModal();
+    // document.getElementById('name-report').readonly = true;
 
     let interval = setInterval(() => {
       it += 1;
@@ -603,6 +615,9 @@ export default function Submission() {
             <audio controls id="audio-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </audio>
+            <div>
+              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
+            </div>
           </div>
         ) : (
           <p></p>
@@ -621,7 +636,7 @@ export default function Submission() {
           className="btn btn-primary"
           data-bs-toggle="modal"
           data-bs-target="#progressModal"
-          onClick={() => handleSubmission({ selectedFile })}
+          onClick={() => handleSubmission({selectedFile})}
         >
           Submit
         </button>
