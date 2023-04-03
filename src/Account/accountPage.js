@@ -1,11 +1,26 @@
 import React, { useEffect, useState } from "react";
 import '../Account/Account.css'
 import { Auth } from "aws-amplify";
-
+import { Storage } from "@aws-amplify/storage"
 
 export default function Account(){
     const[isEditing, setIsEditing] = useState(false);
-    const[userAttributes, setUserAttributes] = useState({})
+    const[userAttributes, setUserAttributes] = useState({});
+    const [userObj, setUserObj] = useState({
+        name: '',
+        username: '',
+        school: '',
+        grade_level: '',
+        state: '',
+        zip: '',
+    })
+
+    const handleInputChange = (event, keyName) => {
+        event.persist();
+        setUserObj((user) => {
+            return {...user, [keyName]: event.target.value}
+        })
+    }
 
     useEffect(() => {
         retrieveUserInfo();
@@ -20,6 +35,18 @@ export default function Account(){
         }
     }
 
+    async function updateUser(){
+        const user = await Auth.currentAuthenticatedUser();
+        await Auth.updateUserAttributes(user, {
+            name: userObj.name,
+            email: userObj.username,
+            'custom:school': userObj.school,
+            'custom:grade_level': userObj.grade_level,
+            'custom:state': userObj.state,
+            'custom:zip': userObj.zip,
+        });
+    }
+
     function saveProfile(){
         setIsEditing(false)
         let elements = document.getElementsByClassName("input-test");
@@ -27,13 +54,28 @@ export default function Account(){
             elements[i].readOnly = true;
             elements[i].disabled = true;
         }
+
+        try{
+            updateUser();
+        }catch(error){
+            console.log(error);
+        }
     }
 
 
     async function retrieveUserInfo(){
         const user = await Auth.currentAuthenticatedUser();
         const { attributes } = user;
-        setUserAttributes(attributes)
+        setUserAttributes(attributes);
+        setUserObj({
+            name: attributes.name,
+            username: attributes.email,
+            school: attributes['custom:school'],
+            grade_level: attributes['custom:grade_level'],
+            state: attributes['custom:state'],
+            zip: attributes['custom:zip'],
+        });
+
     }
 
     return(
@@ -47,7 +89,7 @@ export default function Account(){
                                     <div className="mt-3">
                                         <h4>{userAttributes.name}</h4>
                                         <p className="text-secondary mb-1">Teacher</p>
-                                        <p className="text-muted font-size-sm">{userAttributes['custom:school']}</p>
+                                        <p className="text-muted font-size-sm">{userObj['school']}</p>
                                         {/* <button className="btn btn-primary">Follow</button>
                                         <button className="btn btn-outline-primary">Message</button> */}
                                     </div>
@@ -83,7 +125,7 @@ export default function Account(){
                                         <h6 className="mb-0">Full Name</h6>
                                     </div>
                                     <div className="col-sm-9 text-secondary">
-                                        <input  readOnly={true} className="input-test" disabled={true} value={userAttributes.name}></input>
+                                        <input className="input-test" disabled={true} value={userObj['name']} onChange={(e) => handleInputChange(e, 'name')}></input>
                                      </div>
                                 </div>
                                 <hr/>
@@ -92,7 +134,7 @@ export default function Account(){
                                         <h6 className="mb-0">Email</h6>
                                     </div>
                                     <div className="col-sm-9 text-secondary">
-                                    <input  readOnly={true} className="input-test" disabled={true} value={userAttributes.email}></input>
+                                    <input className="input-test" disabled={true} value={userObj['username']} onChange={(e) => handleInputChange(e, 'username')}></input>
                                     </div>
                                 </div>
                                 <hr/>
@@ -101,7 +143,7 @@ export default function Account(){
                                          <h6 className="mb-0">School</h6>
                                     </div>
                                     <div className="col-sm-9 text-secondary">
-                                    <input  readOnly={true} className="input-test" disabled={true} value={userAttributes['custom:school']}></input>
+                                    <input className="input-test" disabled={true} value={userObj['school']} onChange={(e) => handleInputChange(e, 'school')}></input>
                                     </div>
                                 </div>
                                 <hr/>
@@ -110,7 +152,25 @@ export default function Account(){
                                         <h6 className="mb-0">Grade Level</h6>
                                     </div>
                                     <div className="col-sm-9 text-secondary">
-                                    <input  readOnly={true} className="input-test" disabled={true} value={userAttributes['custom:grade_level']}></input>
+                                    <input className="input-test" disabled={true} value={userObj['grade_level']} onChange={(e) => handleInputChange(e, 'grade_level')}></input>
+                                    </div>
+                                </div>
+                                <hr/>
+                                <div className="row">
+                                    <div className="col-sm-3">
+                                        <h6 className="mb-0">State</h6>
+                                    </div>
+                                    <div className="col-sm-9 text-secondary">
+                                    <input className="input-test" disabled={true} value={userObj['state']} onChange={(e) => handleInputChange(e, 'state')}></input>
+                                    </div>
+                                </div>
+                                <hr/>
+                                <div className="row">
+                                    <div className="col-sm-3">
+                                        <h6 className="mb-0">Zip Code</h6>
+                                    </div>
+                                    <div className="col-sm-9 text-secondary">
+                                    <input className="input-test" disabled={true} value={userObj['zip']} onChange={(e) => handleInputChange(e, 'zip')}></input>
                                     </div>
                                 </div>
                                 <hr/>

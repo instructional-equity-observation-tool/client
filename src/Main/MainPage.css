@@ -34,10 +34,10 @@
   width: calc(100% - 200px);
 }
 
-.card-body {
+/* .card-body {
   height: 400px;
   overflow-y: scroll;
-}
+} */
 
 .question-options {
   display: flex;

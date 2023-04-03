@@ -17,6 +17,9 @@ import Dropdown from "react-bootstrap/Dropdown";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Chart from "react-apexcharts";
+import { Auth } from "aws-amplify";
+import AWS from "aws-sdk";
+import { Buffer } from "buffer";
 
 export default function Submission() {
   const [completed, setCompleted] = useState(0);
@@ -44,8 +47,42 @@ export default function Submission() {
       printTimes();
       setCompleted(0);
       hideModal();
+      saveUserObject();
     }
   }, [sentences]);
+
+
+  async function saveUserObject(){
+    AWS.config.update({ 
+      region: 'us-east-2',
+      apiVersion: 'latest',
+      credentials: {
+        accessKeyId: process.env.REACT_APP_ACCESS_KEY_ID,
+        secretAccessKey: process.env.REACT_APP_SECRET_ID,
+      } 
+    });
+    const s3 = new AWS.S3();
+    var userObject = sentences;
+    var buf = Buffer.from(JSON.stringify(userObject));
+    const user = await Auth.currentAuthenticatedUser();
+    console.log(user);
+    var data = {
+      Bucket: 'user-analysis-objs183943-staging',
+      Key: 'thisUserFolder/032723_recording',
+      Body: buf,
+      ContentEncoding: 'base64',
+      ContentType: 'application/json',
+      ACL: 'public-read'
+    }; 
+    s3.putObject(data, function (err, data) {
+      if (err) {
+          console.log(err);
+          console.log('Error uploading data: ', data);
+      } else {
+          console.log('succesfully uploaded!!!');
+      }
+    });
+  }
 
   function handleFileChange(event) {
     const file = event.target.files[0];
