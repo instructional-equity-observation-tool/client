@@ -805,7 +805,7 @@ export default function Submission() {
           </div>
 
           <div>
-            <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
+            <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
               Download PDF
             </button>
           </div>
