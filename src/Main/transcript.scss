@@ -1,0 +1,62 @@
+$colors: (
+  #FF4136,
+  #0074D9,
+  #2ECC40,
+  #FFDC00,
+  #B10DC9,
+  #FF851B,
+  #F012BE,
+  #01FF70,
+  #7FDBFF,
+  #39CCCC,
+  #3D9970,
+  #85144b,
+  #111111,
+  #AAAAAA,
+  #DDDDDD,
+  #001f3f,
+  #0074D9,
+  #7FDBFF,
+  #39CCCC,
+  #3D9970,
+  #2ECC40,
+  #01FF70,
+  #FFDC00,
+  #FF851B,
+  #FF4136,
+);
+
+$alphabet: (
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "I",
+    "J",
+    "K",
+    "L",
+    "M",
+    "N",
+    "O",
+    "P",
+    "Q",
+    "R",
+    "S",
+    "T",
+    "U",
+    "V",
+    "W",
+    "X",
+    "Y",
+    "Z"
+);
+
+@for $i from 1 through length($colors) {
+  .speaker-#{nth($alphabet, $i)} {
+    color: nth($colors, $i);
+  }
+}

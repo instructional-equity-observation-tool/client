@@ -2,6 +2,7 @@ import React from "react"
 import {Outlet, Link} from "react-router-dom";
 // import signOut from "../SignOut/signOut";
 import "../Layout/navbar.css"
+import C2Image from '../images/C2.png'
 import { Auth } from "aws-amplify";
 import { useNavigate } from "react-router-dom";
 
@@ -22,10 +23,10 @@ const Layout = () => {
             <><><nav className="navbar navbar-expand-lg" id="main-nav">
                 <a className="navbar-brand" href="#">
                     <img
-                        src="https://brand.tcu.edu/wp-content/uploads/2015/12/TCULogo_purple_5X7-01.jpg"
+                        src={C2Image}
                         className="tcu-image"
-                        width="80"
-                        height="80"
+                        width="500"
+                        height="500"
                         alt="" />
                 </a>
 

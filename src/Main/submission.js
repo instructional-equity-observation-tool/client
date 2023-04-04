@@ -10,6 +10,7 @@ import { createArray } from "../expertArrays/create";
 
 import { uploadFile, transcribeFile } from "../utils/assemblyAPI";
 import "./MainPage.css";
+import "./transcript.scss"
 
 import ProgressBar from "../progress";
 import { Modal } from "bootstrap";
@@ -681,9 +682,11 @@ export default function Submission() {
                   <tbody>
                     <p className="sentence">
                       <tr>
-                        <td className="transcript-time">{convertMsToTime(sentence.start)}</td>
-                        <td className="transcript-speaker">Speaker {sentence.speaker}:</td>
-                        <td className="transcript-text">{sentence.text}</td>
+                        <td>
+                          <span className="transcript-time">{convertMsToTime(sentence.start)}</span>
+                          <span className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker} :</span>
+                          <span className="transcript-text">{sentence.text}</span>
+                        </td>
                       </tr>
                     </p>
                   </tbody>
