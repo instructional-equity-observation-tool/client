@@ -18,6 +18,7 @@
 
 body{
     text-align: center;
+    background-color: #CBC3E3;
 }
 
 .navbar-brand{
@@ -36,38 +37,16 @@ body{
     padding-right: 30px;
 }
 
+#main-nav{
+    background-color: #4d1979;
+}
+
 .lead {
     height: 300px;
     overflow: auto;
     border: 0.5px solid black;
 }
 
-.sentence {
-    margin-left: 20px;
-    display: flex;
+.submission-main{
+    margin-bottom: 20px;
 }
-
-.transcript-time {
-    width: 60px;
-}
-.transcript-speaker {
-    margin-left: 30px;
-    margin-right: 10px;
-    white-space: nowrap;
-}
-
-.transcript-text {
-    text-align: left;
-}
-
-body{
-    color: black;
-    }
-    .bg-secondary-soft {
-        background-color: rgba(208, 212, 217, 0.1) !important;
-    }
-    
-
-    .file-upload{
-        padding-bottom: 50px;
-    }

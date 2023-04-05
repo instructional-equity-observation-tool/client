@@ -1,6 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import axios from "axios";
-
 import { knowledgeArray } from "../expertArrays/knowledge";
 import { understandArray } from "../expertArrays/understand";
 import { applyArray } from "../expertArrays/apply";
@@ -9,6 +7,8 @@ import { evaluateArray } from "../expertArrays/evaluate";
 import { createArray } from "../expertArrays/create";
 
 import { uploadFile, transcribeFile } from "../utils/assemblyAPI";
+import "./MainPage.css";
+import "./transcript.scss";
 
 import ProgressBar from "../progress";
 import { Modal } from "bootstrap";
@@ -16,20 +16,25 @@ import Dropdown from "react-bootstrap/Dropdown";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Chart from "react-apexcharts";
-import "./transcript.scss"
+import { Auth } from "aws-amplify";
+import AWS from "aws-sdk";
+import { Buffer } from "buffer";
 
 export default function Submission() {
   const [completed, setCompleted] = useState(0);
   const [transcript, setTranscript] = useState();
   const [sentences, setSentences] = useState();
-
   const [times, setTimes] = useState();
   const [speakers, setSpeakers] = useState();
   const [questions, setQuestions] = useState();
   const [respTime, setRespTime] = useState();
   const [labeledQuestions, setLabeledQuestions] = useState();
+  console.log("labeledQuestions: ", labeledQuestions);
   const [questioningTime, setQuestioningTime] = useState();
-
+  const [isAudio, setIsAudio] = useState(false);
+  const [isVideo, setIsVideo] = useState(false);
+  const [selectedFile, setSelectedFile] = useState("");
+  const [reportName, setReportName] = useState("");
   const [fileContent, setFileContent] = useState();
 
   useEffect(() => {
@@ -40,20 +45,79 @@ export default function Submission() {
       printTimes();
       setCompleted(0);
       hideModal();
+      saveUserObject();
     }
   }, [sentences]);
 
+  useEffect(() => {
+    if (questions) {
+      toResponse();
+      printTimes();
+    }
+  }, [questions]);
+
+  function handleInputChange(event) {
+    event.persist();
+    setReportName(event.target.value);
+  }
+
+  async function saveUserObject() {
+    AWS.config.update({
+      region: "us-east-2",
+      apiVersion: "latest",
+      credentials: {
+        accessKeyId: process.env.REACT_APP_ACCESS_KEY_ID,
+        secretAccessKey: process.env.REACT_APP_SECRET_ID,
+      },
+    });
+    const s3 = new AWS.S3();
+    var userObject = sentences;
+    var buf = Buffer.from(JSON.stringify(userObject));
+    const user = await Auth.currentAuthenticatedUser();
+
+    const folderName = user.username;
+
+    const location = folderName + "/" + reportName;
+
+    var data = {
+      Bucket: "user-analysis-objs183943-staging",
+      Key: location,
+      Body: JSON.stringify(sentences),
+      ContentEncoding: "base64",
+      ContentType: "application/json",
+      ACL: "public-read",
+    };
+    s3.putObject(data, function (err, data) {
+      if (err) {
+      } else {
+      }
+    });
+  }
+
   function handleFileChange(event) {
     const file = event.target.files[0];
+    setSelectedFile(event.target.files[0]);
     const reader = new FileReader();
     reader.readAsArrayBuffer(file);
     reader.onloadend = (event) => {
       setFileContent(event.target.result);
     };
+    const type = file.type;
+    if (type.includes("audio")) {
+      setIsAudio(true);
+      setIsVideo(false);
+    } else if (type.includes("video")) {
+      setIsVideo(true);
+      setIsAudio(false);
+    } else {
+      setIsAudio(false);
+      setIsVideo(false);
+    }
   }
 
   let handleSubmission = async () => {
     showModal();
+    // document.getElementById('name-report').readonly = true;
 
     let interval = setInterval(() => {
       it += 1;
@@ -66,7 +130,7 @@ export default function Submission() {
 
     const audioUrl = await uploadFile(fileContent);
     const transcriptionResult = await transcribeFile(audioUrl);
-    console.log("transcriptionResult: ", transcriptionResult);
+
     setSentences(transcriptionResult);
   };
 
@@ -79,6 +143,20 @@ export default function Submission() {
       setTranscript(transcript);
     }
   }
+
+  const handleAddQuestion = (sentence) => {
+    if (!questions.some((question) => question.start === sentence.start)) {
+      setQuestions((prevQuestions) => {
+        const updatedQuestions = [...prevQuestions, sentence];
+        const sortedQuestions = updatedQuestions.sort((a, b) => a.start - b.start);
+        const questionIndex = sortedQuestions.findIndex((question) => question === sentence);
+        const updatedLabeledQuestions = [...labeledQuestions];
+        updatedLabeledQuestions.splice(questionIndex, 0, "Uncategorized");
+        setLabeledQuestions(updatedLabeledQuestions);
+        return sortedQuestions;
+      });
+    }
+  };
 
   let it = 0;
 
@@ -114,82 +192,40 @@ export default function Submission() {
   }
 
   function toResponse() {
-    const qs = {};
+    if (questions) {
+      const isQuestion = (sentence) => questions.some((question) => question === sentence);
 
-    if (sentences) {
-      // iterate through the sentences and find the questions
-      for (let i = 0; i < sentences.length; i++) {
-        //const sentence = sentences[i];
-        if (sentences[i].text.includes("?")) {
-          qs[sentences[i].end] = sentences[i];
+      let stamps = sentences.reduce((acc, current, index, arr) => {
+        const isCurrentQuestion = isQuestion(current);
+        const isNextNonQuestionAndDifferentSpeaker =
+          index < arr.length - 1 && !isQuestion(arr[index + 1]) && arr[index + 1].speaker !== current.speaker;
+
+        if (isCurrentQuestion) {
+          acc[current.end] = isNextNonQuestionAndDifferentSpeaker ? (arr[index + 1].start - current.end) / 1000 : "No Response";
+          console.log("current.end: ", current.end);
+          console.log("arr[index + 1].start: ", arr[index + 1].start);
         }
-      }
-
-      //
-
-      // iterate through the sentences again and find the responses to the questions
-      const responses = [];
-      let lastq = 999999999;
-      let spek = "";
-      let passable = false;
-      for (let i = 0; i < sentences.length; i++) {
-        //const sentence = sentences[i];
-        if (sentences[i].text.includes("?")) {
-          // this is a question, so skip it
-          lastq = sentences[i].end;
-          spek = sentences[i].speaker;
-          passable = true;
-          continue;
-        }
-        if (sentences[i].start > lastq && sentences[i].speaker !== spek && passable) {
-          // this is a response to a question, so add it to the responses list
-          //
-          //
-          responses.push(sentences[i]);
-          passable = false;
-        }
-      }
-
-      const stamps = {};
-      let currR;
-      let currQ;
-
-      for (let q in qs) {
-        stamps[q] = "No Response";
-      }
-
-      for (let i = 0; i < responses.length; i++) {
-        currR = responses[i].start;
-        for (let s in qs) {
-          if (qs[s].end < currR) {
-            currQ = qs[s].end;
-          }
-        }
-        stamps[currQ] = convertMsToTime(currR - currQ);
-      }
-
-      // return the list of responses
-
+        return acc;
+      }, {});
       setRespTime(stamps);
-      return stamps;
+      console.log("stamps: ", stamps);
     }
   }
 
   function printTimes() {
-    if (sentences) {
+    if (questions) {
       let sStamps = [];
       let speaks = [];
       let qDur = 0;
-      for (let i = 0; i < sentences.length; i++) {
-        if (sentences[i].text.includes("?")) {
-          qDur += sentences[i].end - sentences[i].start;
-          sStamps.push(convertMsToTime(sentences[i].start));
-          speaks.push(sentences[i].speaker);
-        }
+      for (let i = 0; i < questions.length; i++) {
+        qDur += questions[i].end - questions[i].start;
+        sStamps.push(convertMsToTime(questions[i].start));
+        speaks.push(questions[i].speaker);
       }
       it = 0;
       setQuestioningTime(convertMsToTime(qDur));
       setTimes(sStamps);
+
       setSpeakers(speaks);
       return sStamps;
     }
@@ -217,73 +253,32 @@ export default function Submission() {
   }
 
   function findQuestionsLabels(quests) {
-    let labeled = new Array(quests.length);
+    const categoryMap = {
+      Knowledge: knowledgeArray,
+      Analyze: analyzeArray,
+      Apply: applyArray,
+      Create: createArray,
+      Evaluate: evaluateArray,
+      Understand: understandArray,
+    };
 
-    for (let j = 0; j < labeled.length; j++) {
-      labeled[j] = "";
-    }
+    const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
 
-    for (let i = 0; i < quests.length; i++) {
-      for (let j = 0; j < quests[i].words.length; j++) {
-        let tempWord = quests[i].words[j].text.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
+    const findCategories = (word) =>
+      Object.keys(categoryMap)
+        .filter((key) => categoryMap[key].includes(word))
+        .join(" or ");
 
-        if (knowledgeArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Knowledge";
-          } else if (!labeled[i].includes("Knowledge")) {
-            labeled[i] += " or Knowledge";
-          }
-        }
+    const labeled = quests.map((quest) => {
+      const categories = quest.words
+        .map((wordObj) => sanitizeWord(wordObj.text))
+        .map(findCategories)
+        .filter((category) => category.length > 0);
 
-        if (analyzeArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Analyze";
-          } else {
-            labeled[i] += " or Analyze";
-          }
-        }
-
-        if (applyArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Apply";
-          } else if (!labeled[i].includes("Apply")) {
-            labeled[i] += " or Apply";
-          }
-        }
-
-        if (createArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Create";
-          } else if (!labeled[i].includes("Create")) {
-            labeled[i] += " or Create";
-          }
-        }
-
-        if (evaluateArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Evaluate";
-          } else if (!labeled[i].includes("Evaluate")) {
-            labeled[i] += " or Evaluate";
-          }
-        }
-
-        if (understandArray.some((v) => tempWord === v)) {
-          if (labeled[i] === "") {
-            labeled[i] = "Understand";
-          } else if (!labeled[i].includes("Understand")) {
-            labeled[i] += " or Understand";
-          }
-        }
-      }
-
-      if (labeled[i] === "") {
-        labeled[i] = "Non-Bloom's";
-      }
-    }
+      return categories.length > 0 ? categories.join(" or ") : "Uncategorized";
+    });
 
     setLabeledQuestions(labeled);
-
-    return labeled;
   }
 
   function removeQuestion(idx) {
@@ -337,11 +332,27 @@ export default function Submission() {
   }
 
   function setTimeChartData() {
-    if (sentences) {
+    if (labeledQuestions) {
       let data = [];
-      for (let i = 0; i < sentences.length; i++) {
-        let timeListObj = new timeObj(sentences[i].speaker, [sentences[i].start / 1000, sentences[i].end / 1000]);
+      //
+      //make initial rows
+      let categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
+      for (let i = 0; i < categories.length; i++) {
+        let timeListObj = new timeObj(categories[i], [0, 0]);
         data.push(timeListObj);
+      }
+
+      for (let i = 0; i < labeledQuestions.length; i++) {
+        if (categories.includes(labeledQuestions[i])) {
+          //if(convertMsToTime(((questions[i].end / 1000) - (questions[i].start / 1000))) < 5){
+          //let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 2]);
+          //data.push(timeListObj);
+          //}
+          //else{
+          let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, questions[i].start / 1000 + 5]);
+          data.push(timeListObj);
+          //}
+        }
       }
       return data;
     }
@@ -358,7 +369,7 @@ export default function Submission() {
         type: "rangeBar",
       },
       title: {
-        text: "Speaking Timeline",
+        text: "Teacher Question Timeline",
         align: "left",
         style: {
           fontSize: "30px",
@@ -375,11 +386,24 @@ export default function Submission() {
       xaxis: {
         type: "numeric",
       },
+      yaxis: {
+        labels: {
+          style: {
+            fontSize: "20px",
+          },
+        },
+        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"],
+      },
     },
   };
 
   const barChartProps = {
     options: {
+      //plotOptions: {
+      //bar: {
+      //distributed: true
+      //}
+      //},
       title: {
         text: "Question Category Distribution",
         align: "left",
@@ -404,18 +428,54 @@ export default function Submission() {
             fontSize: "20px",
           },
         },
-        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"],
+        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create", "Uncategorized"],
       },
     },
     series: [
       {
         data: [
-          getAmountOfLabel("Knowledge"),
-          getAmountOfLabel("Understand"),
-          getAmountOfLabel("Apply"),
-          getAmountOfLabel("Analyze"),
-          getAmountOfLabel("Evaluate"),
-          getAmountOfLabel("Create"),
+          {
+            x: "Knowledge",
+            y: getAmountOfLabel("Knowledge"),
+            fillColor: "#0000FF",
+            strokeColor: "#000000",
+          },
+          {
+            x: "Understand",
+            y: getAmountOfLabel("Understand"),
+            fillColor: "#D42AC8",
+            strokeColor: "#C23829",
+          },
+          {
+            x: "Apply",
+            y: getAmountOfLabel("Apply"),
+            fillColor: "#009400",
+            strokeColor: "#C23829",
+          },
+          {
+            x: "Analyze",
+            y: getAmountOfLabel("Analyze"),
+            fillColor: "#FF7300",
+            strokeColor: "#C23829",
+          },
+          {
+            x: "Evaluate",
+            y: getAmountOfLabel("Evaluate"),
+            fillColor: "#FFC400",
+            strokeColor: "#000000",
+          },
+          {
+            x: "Create",
+            y: getAmountOfLabel("Create"),
+            fillColor: "#7C7670",
+            strokeColor: "#C23829",
+          },
+          {
+            x: "Uncategorized",
+            y: getAmountOfLabel("Uncategorized"),
+            fillColor: "#FF0000",
+            strokeColor: "#C23829",
+          },
         ],
       },
     ],
@@ -443,31 +503,14 @@ export default function Submission() {
       },
       labels: ["Teacher", "Students", "Non-Speaking"],
     },
-    //series: [...speakingTimeList()],
     series: [getSpeakingTime(getMaxSpeaker()), sumSpeakingTime() - getSpeakingTime(getMaxSpeaker()), getNonSpeakingTime(sentences)],
   };
 
-  function speakingTimeList() {
-    if (sentences) {
-      let speakingTimeList = [];
-      let speakerList = totalSpeakers();
-
-      for (let i = 0; i < speakerList.length; i++) {
-        speakingTimeList.push(getSpeakingTime(speakerList[i]));
-      }
-
-      //
-      return speakingTimeList;
-    }
-  }
-
   function getNonSpeakingTime(sentences) {
-    if(sentences)
-      return (sentences[sentences.length - 1].end - sentences[0].start) - sumSpeakingTime(sentences);
+    if (sentences) return sentences[sentences.length - 1].end - sentences[0].start - sumSpeakingTime(sentences);
   }
 
   function getSpeakingTime(speakerName) {
-    //
     let speakingTime = 0;
     if (sentences) {
       for (let i = 0; i < sentences.length; i++) {
@@ -476,9 +519,6 @@ export default function Submission() {
         }
       }
     }
-    //
-    //
-    //
     return speakingTime;
   }
 
@@ -493,16 +533,8 @@ export default function Submission() {
 
       let questionArray = new Array();
       for (let i = 0; i < questions.length; i++) {
-        //
         questionArray[i] = new Array(questions[i].text, labeledQuestions[i]);
-        //
       }
-
-      //let speakTimeArray = new Array();
-      //for(let i = 0; i < questions.length; i++){
-      //speakTimeArray[i] = new Array(speakTimeArray[i].text, "Question Category");
-      //
-      //}
 
       let y = 10;
       doc.setLineWidth(2);
@@ -551,11 +583,38 @@ export default function Submission() {
     <div>
       <div>
         <label className="form-label" htmlFor="customFile">
-          Please Upload a File for Transcription
+          <h4>Please Upload a File for Transcription</h4>
+          <p>.MTS files are not compatible with the video player feature. Please convert to .mp4 file</p>
         </label>
-        <input type="file" className="form-control" id="customFile" accept="audio/*,video/*" onChange={handleFileChange} />
-
-        <button type="button" className="btn btn-primary" data-bs-toggle="modal" data-bs-target="#progressModal" onClick={handleSubmission}>
+        <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
+        {isAudio ? (
+          <div>
+            <audio controls id="audio-player">
+              <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
+            </audio>
+            <div>
+              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
+            </div>
+          </div>
+        ) : (
+          <p></p>
+        )}
+        {isVideo ? (
+          <div>
+            <video controls id="video-player">
+              <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
+            </video>
+          </div>
+        ) : (
+          <p></p>
+        )}
+        <button
+          type="button"
+          className="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#progressModal"
+          onClick={() => handleSubmission({ selectedFile })}
+        >
           Submit
         </button>
         <div className="addEmployee">
@@ -593,21 +652,29 @@ export default function Submission() {
         <div>
           <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
             <h1>Full Transcript</h1>
-            <div className="lead">
+            <div className="lead" style={{ backgroundColor: "white" }}>
               {sentences.map((sentence) => (
-                <p className="sentence">
-                  <span className="transcript-time">{convertMsToTime(sentence.start)}</span>
-                  <span className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker} :</span>
-                  <span className="transcript-text">"{sentence.text}"</span>
-                </p>
+                <div className="sentence">
+                  <div className="sentence-transcript">
+                    <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
+                    <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
+                    <div className="transcript-text">{sentence.text}</div>
+                  </div>
+                  <button className="add-question-button" onClick={() => handleAddQuestion(sentence)}>
+                    Add as a question
+                  </button>
+                </div>
               ))}
             </div>
           </div>
-
           <div className="card-deck mb-3 text-center">
             <div className="card mb-4 box-shadow">
               <div className="card-header">
                 <h2>Questions</h2>
+              </div>
+              <div className="card-header">
+                <h5>Number of Questions: {questions && questions.length}</h5>
+                <h5>Total Questioning Time: {questioningTime}</h5>
               </div>
               <div className="card-body">
                 <div className="container">
@@ -623,14 +690,21 @@ export default function Submission() {
                     </thead>
                     <tbody>
                       {questions &&
+                        times &&
                         questions.map((question, index) => (
-                          <tr>
+                          <tr className="question">
                             <td>{times[index]}</td>
-                            <td>"{question.text}"</td>
+                            <td id="question-table-question">"{question.text}"</td>
                             <td>{speakers[index]}</td>
-                            <td>{respTime[question.end]}</td>
-                            <td>{labeledQuestions[index]}</td>
                             <td>
+                              {respTime[question.end] < 1
+                                ? "< 1 second"
+                                : respTime[question.end] === "No Response"
+                                ? "No Response"
+                                : respTime[question.end] + " seconds"}
+                            </td>
+                            <td>{labeledQuestions[index]}</td>
+                            <div className="question-options">
                               <Dropdown>
                                 <Dropdown.Toggle variant="sm" id="dropdown-basic">
                                   Select Type
@@ -681,33 +755,15 @@ export default function Submission() {
                                   </Dropdown.Item>
                                 </Dropdown.Menu>
                               </Dropdown>
-                            </td>
-                            <td>
                               <button type="button" class="btn btn-danger" onClick={() => removeQuestion(index)}>
                                 Remove
                               </button>
-                            </td>
+                            </div>
                           </tr>
                         ))}
                     </tbody>
                   </table>
                 </div>
-              </div>
-            </div>
-            <div className="card mb-4 box-shadow">
-              <div className="card-header">
-                <h2>Number of Questions</h2>
-              </div>
-              <div className="card-body">
-                <h2>{questions && questions.length}</h2>
-              </div>
-            </div>
-            <div className="card mb-4 box-shadow">
-              <div className="card-header">
-                <h2>Total Questioning Time</h2>
-              </div>
-              <div className="card-body">
-                <h2>{questioningTime}</h2>
               </div>
             </div>
             <div>
@@ -720,22 +776,16 @@ export default function Submission() {
                 </td>
               </tr>
               <br></br>
-              {/* <tr>
-                  <td>
-                    <Chart
-                      options={timeChartProps.options}
-                      series={timeChartProps.series}
-                      type="rangeBar"
-                      height={600}
-                      width={1300}
-                    />
-                  </td>
-                </tr> */}
+              <tr>
+                <td>
+                  <Chart options={timeChartProps.options} series={timeChartProps.series} type="rangeBar" height={600} width={1300} />
+                </td>
+              </tr>
             </div>
           </div>
 
           <div>
-            <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
+            <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
               Download PDF
             </button>
           </div>
