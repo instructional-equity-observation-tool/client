@@ -21,8 +21,10 @@ import Chart from "react-apexcharts";
 import { Auth } from "aws-amplify";
 import AWS from "aws-sdk";
 import { Buffer } from "buffer";
+import { useLocation } from "react-router-dom";
 
 export default function Submission() {
+
   const [completed, setCompleted] = useState(0);
   const [transcript, setTranscript] = useState();
   const [sentences, setSentences] = useState();
@@ -36,23 +38,34 @@ export default function Submission() {
 
   const [isAudio, setIsAudio] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
+  const [isNeither, setIsNeither] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
 
   const [reportName, setReportName] = useState("");
 
   const [fileContent, setFileContent] = useState();
 
+  const location = useLocation();
+  const userReportToLoad = location.state?.data
+
   useEffect(() => {
+    checkLoadReport();
     if (sentences) {
       createTranscript();
       findQuestions();
-      toResponse();
+      toResponse(); 
       printTimes();
       setCompleted(0);
-      hideModal();
-      saveUserObject();
+      // hideModal();
     }
   }, [sentences]);
+
+  function checkLoadReport(){
+    if(userReportToLoad){
+      document.getElementById('submission-main').click();
+    }
+  }
 
 
   function handleInputChange(event){
@@ -70,8 +83,14 @@ export default function Submission() {
       } 
     });
     const s3 = new AWS.S3();
-    var userObject = sentences;
-    var buf = Buffer.from(JSON.stringify(userObject));
+
+    if(userReportToLoad){
+      var userObject = userReportToLoad;
+    }else{
+      var userObject = sentences;
+    }
+    
+    //var buf = Buffer.from(JSON.stringify(userObject));
     const user = await Auth.currentAuthenticatedUser();
     console.log(user.username);
     const folderName = user.username;
@@ -81,7 +100,7 @@ export default function Submission() {
     var data = {
       Bucket: 'user-analysis-objs183943-staging',
       Key: location,
-      Body: JSON.stringify(sentences),
+      Body: JSON.stringify(userObject),
       ContentEncoding: 'base64',
       ContentType: 'application/json',
       ACL: 'public-read',
@@ -114,26 +133,32 @@ export default function Submission() {
     } else {
       setIsAudio(false);
       setIsVideo(false);
+      setIsNeither(true);
     }
   }
 
   let handleSubmission = async () => {
-    showModal();
-    // document.getElementById('name-report').readonly = true;
+    setIsAnalyzing(true);
+    if(userReportToLoad){
+      setSentences(userReportToLoad);
+    }else{
+      // showModal();
+      // document.getElementById('name-report').readonly = true;
+      // let interval = setInterval(() => {
+      //   it += 1;
+      //   setCompleted(it);
+      //   if (it === 95) {
+      //     clearInterval(interval);
+      //     it = 0;
+      //   }
+      // }, 2000);
 
-    let interval = setInterval(() => {
-      it += 1;
-      setCompleted(it);
-      if (it === 95) {
-        clearInterval(interval);
-        it = 0;
-      }
-    }, 2000);
-
-    const audioUrl = await uploadFile(fileContent);
-    const transcriptionResult = await transcribeFile(audioUrl);
-    console.log("transcriptionResult: ", transcriptionResult);
-    setSentences(transcriptionResult);
+      const audioUrl = await uploadFile(fileContent);
+      const transcriptionResult = await transcribeFile(audioUrl);
+      console.log("transcriptionResult: ", transcriptionResult);
+      setSentences(transcriptionResult);
+      setIsAnalyzing(false);
+    }
   };
 
   function createTranscript() {
@@ -607,12 +632,13 @@ export default function Submission() {
     <div>
       <div>
         <label className="form-label" htmlFor="customFile">
-          <h4>Please Upload a File for Transcription</h4>
-          <p>.MTS files are not compatible with the video player feature. Please convert to .mp4 file</p>
+          <h4>Please upload an audio or video recording for transcription</h4>
+          <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
         </label>
         <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
         {isAudio ? (
           <div>
+            <p>FILE SUCCESSFULLY UPLOADED</p>
             <audio controls id="audio-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </audio>
@@ -625,9 +651,27 @@ export default function Submission() {
         )}
         {isVideo ? (
           <div>
+            <p>FILE SUCCESSFULLY UPLOADED</p>
             <video controls id="video-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </video>
+            <div>
+              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
+            </div>
+          </div>
+        ) : (
+          <p></p>
+        )}
+        {isNeither ? (
+          <div>
+            <p>FILE SUCCESSFULLY UPLOADED</p>
+            <p>Please click SUBMIT to begin analysis</p>
+            {isAnalyzing ? (
+              <p>ANALYZING PLEASE WAIT</p>
+            ): null}
+            <div>
+              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
+            </div>
           </div>
         ) : (
           <p></p>
@@ -637,6 +681,7 @@ export default function Submission() {
           className="btn btn-primary"
           data-bs-toggle="modal"
           data-bs-target="#progressModal"
+          id="submission-main"
           onClick={() => handleSubmission({selectedFile})}
         >
           Submit
@@ -807,6 +852,9 @@ export default function Submission() {
           <div>
             <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
               Download PDF
+            </button>
+            <button onClick={() => saveUserObject()} className='btn btn-primary'>
+              SAVE REPORT
             </button>
           </div>
         </div>
