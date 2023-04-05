@@ -172,7 +172,7 @@ export default function Account(){
                             ))}
                             {reportLoaded ? (
                                 <Link to="/home" state={{
-                                    data: report
+                                    data: report,
         
                                 }} className="btn btn-success">LOAD REPORT</Link>
                             ) : null}

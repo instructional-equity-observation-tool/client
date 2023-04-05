@@ -62,6 +62,8 @@ export default function Submission() {
       printTimes();
     }
   }, [questions]);
+
+
   function checkLoadReport(){
     if(userReportToLoad){
       document.getElementById('submission-main').click();
@@ -109,6 +111,7 @@ export default function Submission() {
     s3.putObject(data, function (err, data) {
       if (err) {
       } else {
+        console.log("successfully uploaded")
       }
     });
   }
@@ -302,7 +305,7 @@ export default function Submission() {
 
       return categories.length > 0 ? categories.join(" or ") : "Uncategorized";
     });
-
+    console.log("LABELED", labeled);
     setLabeledQuestions(labeled);
   }
 
@@ -657,6 +660,7 @@ export default function Submission() {
           className="btn btn-primary"
           data-bs-toggle="modal"
           data-bs-target="#progressModal"
+          id="submission-main"
           onClick={() => handleSubmission({selectedFile})}
         >
           Submit
