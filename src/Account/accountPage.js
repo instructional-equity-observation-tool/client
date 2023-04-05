@@ -6,12 +6,15 @@ import AWS from "aws-sdk";
 import {Buffer} from "buffer";
 import Submission from "../Main/submission";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 export default function Account(){
     const[isEditing, setIsEditing] = useState(false);
     const[userAttributes, setUserAttributes] = useState({});
-    const navigate = useNavigate();
-    const [report, setReport] = useState({})
+    const [report, setReport] = useState({});
+    const [reportLoaded, setReportLoaded] = useState(false);
+    const [listFiles, setListFiles] = useState([]);
+    const [filename, setFilename] = useState();
     const [userObj, setUserObj] = useState({
         name: '',
         username: '',
@@ -95,30 +98,50 @@ export default function Account(){
               secretAccessKey: process.env.REACT_APP_SECRET_ID,
             } 
           });
+          const user = await Auth.currentAuthenticatedUser();
+          const s3 = new AWS.S3();
+          let params = {
+            Bucket: 'user-analysis-objs183943-staging',
+            Delimiter: '',
+            Prefix: user.username + "/"
+          }
+
+          s3.listObjectsV2(params, function (err, data){
+            if(err){
+                console.log(err)
+            }else{
+                setListFiles(data.Contents)
+                console.log(data.Contents);
+            }
+          })
+    }
+
+    async function loadUserReport(key, event){
+        event.preventDefault();
         const s3 = new AWS.S3();
         const user = await Auth.currentAuthenticatedUser();
-        const location = user.username + '/sam-test-file'
+        const location = key
         console.log(location)
+
         let params = {
             Bucket: 'user-analysis-objs183943-staging',
             Key: location,
             ResponseContentType: 'application/json'
         }
+
        s3.getObject(params, function (err, data){
-            if(err) throw err;
-            console.log(data)
-            console.log(data.Body)
-            console.log(JSON.parse(data.Body))
-            setReport(JSON.parse(data.Body));
+            if(err){
+                console.log(err)
+                setReport(null);
+            }else{
+                console.log(data)
+                console.log(data.Body)
+                console.log(JSON.parse(data.Body))
+                setReport(JSON.parse(data.Body));
+            }
         })
+        setReportLoaded(true);
     }
-
-    function loadUserReport(event){
-        event.preventDefault();
-    }
-
-
-
 
     return(
         <div className="container">
@@ -139,19 +162,20 @@ export default function Account(){
                             </div>
                         </div>
                         <div className="card mt-2">
+                            <h4>My Reports</h4>
                             <ul className="list-group">
-                                <li className="list-group-item" id="my-reports">
-                                    <h4>My Reports</h4>
-                                </li>
-                                <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
-                                    <button className="btn btn-primary" onClick={(e) => loadUserReport(e)}>PDF1</button>
-                                </li>
-                                <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
-                                    <p>PDF2</p>
-                                </li>
-                                <li className="list-group-item d-flex justify-content-between align-items-center flex-wrap">
-                                    <p>PDF3</p>
-                                </li>
+                            {listFiles && 
+                                listFiles.map((name, index) => (
+                                    <li className='list-group-item' key={index}>
+                                        <button className="btn btn-primary" onClick={(e) => loadUserReport(name.Key, e)}>{name.Key.substring(name.Key.indexOf("/") + 1)}</button>   
+                                    </li>         
+                            ))}
+                            {reportLoaded ? (
+                                <Link to="/home" state={{
+                                    data: report,
+        
+                                }} className="btn btn-success">LOAD REPORT</Link>
+                            ) : null}
                             </ul>
                         </div>
                     </div>
