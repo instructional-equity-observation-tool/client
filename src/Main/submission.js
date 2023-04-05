@@ -1,6 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import axios from "axios";
-
 import { knowledgeArray } from "../expertArrays/knowledge";
 import { understandArray } from "../expertArrays/understand";
 import { applyArray } from "../expertArrays/apply";
@@ -10,7 +8,7 @@ import { createArray } from "../expertArrays/create";
 
 import { uploadFile, transcribeFile } from "../utils/assemblyAPI";
 import "./MainPage.css";
-import "./transcript.scss"
+import "./transcript.scss";
 
 import ProgressBar from "../progress";
 import { Modal } from "bootstrap";
@@ -28,22 +26,19 @@ export default function Submission() {
   const [completed, setCompleted] = useState(0);
   const [transcript, setTranscript] = useState();
   const [sentences, setSentences] = useState();
-
   const [times, setTimes] = useState();
   const [speakers, setSpeakers] = useState();
   const [questions, setQuestions] = useState();
   const [respTime, setRespTime] = useState();
   const [labeledQuestions, setLabeledQuestions] = useState();
+  console.log("labeledQuestions: ", labeledQuestions);
   const [questioningTime, setQuestioningTime] = useState();
-
   const [isAudio, setIsAudio] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
   const [isNeither, setIsNeither] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
-
   const [reportName, setReportName] = useState("");
-
   const [fileContent, setFileContent] = useState();
 
   const location = useLocation();
@@ -61,6 +56,12 @@ export default function Submission() {
     }
   }, [sentences]);
 
+  useEffect(() => {
+    if (questions) {
+      toResponse();
+      printTimes();
+    }
+  }, [questions]);
   function checkLoadReport(){
     if(userReportToLoad){
       document.getElementById('submission-main').click();
@@ -68,19 +69,19 @@ export default function Submission() {
   }
 
 
-  function handleInputChange(event){
+  function handleInputChange(event) {
     event.persist();
     setReportName(event.target.value);
   }
 
-  async function saveUserObject(){
-    AWS.config.update({ 
-      region: 'us-east-2',
-      apiVersion: 'latest',
+  async function saveUserObject() {
+    AWS.config.update({
+      region: "us-east-2",
+      apiVersion: "latest",
       credentials: {
         accessKeyId: process.env.REACT_APP_ACCESS_KEY_ID,
         secretAccessKey: process.env.REACT_APP_SECRET_ID,
-      } 
+      },
     });
     const s3 = new AWS.S3();
 
@@ -92,13 +93,13 @@ export default function Submission() {
     
     //var buf = Buffer.from(JSON.stringify(userObject));
     const user = await Auth.currentAuthenticatedUser();
-    console.log(user.username);
+
     const folderName = user.username;
-    console.log(reportName)
+
     const location = folderName + "/" + reportName;
-    console.log(location)
+
     var data = {
-      Bucket: 'user-analysis-objs183943-staging',
+      Bucket: "user-analysis-objs183943-staging",
       Key: location,
       Body: JSON.stringify(userObject),
       ContentEncoding: 'base64',
@@ -107,10 +108,7 @@ export default function Submission() {
     }; 
     s3.putObject(data, function (err, data) {
       if (err) {
-          console.log(err);
-          console.log('Error uploading data: ', data);
       } else {
-          console.log('succesfully uploaded!!!');
       }
     });
   }
@@ -171,6 +169,20 @@ export default function Submission() {
     }
   }
 
+  const handleAddQuestion = (sentence) => {
+    if (!questions.some((question) => question.start === sentence.start)) {
+      setQuestions((prevQuestions) => {
+        const updatedQuestions = [...prevQuestions, sentence];
+        const sortedQuestions = updatedQuestions.sort((a, b) => a.start - b.start);
+        const questionIndex = sortedQuestions.findIndex((question) => question === sentence);
+        const updatedLabeledQuestions = [...labeledQuestions];
+        updatedLabeledQuestions.splice(questionIndex, 0, "Uncategorized");
+        setLabeledQuestions(updatedLabeledQuestions);
+        return sortedQuestions;
+      });
+    }
+  };
+
   let it = 0;
 
   const modalRef = useRef();
@@ -205,82 +217,40 @@ export default function Submission() {
   }
 
   function toResponse() {
-    const qs = {};
+    if (questions) {
+      const isQuestion = (sentence) => questions.some((question) => question === sentence);
 
-    if (sentences) {
-      // iterate through the sentences and find the questions
-      for (let i = 0; i < sentences.length; i++) {
-        //const sentence = sentences[i];
-        if (sentences[i].text.includes("?")) {
-          qs[sentences[i].end] = sentences[i];
+      let stamps = sentences.reduce((acc, current, index, arr) => {
+        const isCurrentQuestion = isQuestion(current);
+        const isNextNonQuestionAndDifferentSpeaker =
+          index < arr.length - 1 && !isQuestion(arr[index + 1]) && arr[index + 1].speaker !== current.speaker;
+
+        if (isCurrentQuestion) {
+          acc[current.end] = isNextNonQuestionAndDifferentSpeaker ? (arr[index + 1].start - current.end) / 1000 : "No Response";
+          console.log("current.end: ", current.end);
+          console.log("arr[index + 1].start: ", arr[index + 1].start);
         }
-      }
-
-      //
-
-      // iterate through the sentences again and find the responses to the questions
-      const responses = [];
-      let lastq = 999999999;
-      let spek = "";
-      let passable = false;
-      for (let i = 0; i < sentences.length; i++) {
-        //const sentence = sentences[i];
-        if (sentences[i].text.includes("?")) {
-          // this is a question, so skip it
-          lastq = sentences[i].end;
-          spek = sentences[i].speaker;
-          passable = true;
-          continue;
-        }
-        if (sentences[i].start > lastq && sentences[i].speaker !== spek && passable) {
-          // this is a response to a question, so add it to the responses list
-          //
-          //
-          responses.push(sentences[i]);
-          passable = false;
-        }
-      }
-
-      const stamps = {};
-      let currR;
-      let currQ;
-
-      for (let q in qs) {
-        stamps[q] = "No Response";
-      }
-
-      for (let i = 0; i < responses.length; i++) {
-        currR = responses[i].start;
-        for (let s in qs) {
-          if (qs[s].end < currR) {
-            currQ = qs[s].end;
-          }
-        }
-        stamps[currQ] = convertMsToTime(currR - currQ);
-      }
-
-      // return the list of responses
-
+        return acc;
+      }, {});
       setRespTime(stamps);
-      return stamps;
+      console.log("stamps: ", stamps);
     }
   }
 
   function printTimes() {
-    if (sentences) {
+    if (questions) {
       let sStamps = [];
       let speaks = [];
       let qDur = 0;
-      for (let i = 0; i < sentences.length; i++) {
-        if (sentences[i].text.includes("?")) {
-          qDur += sentences[i].end - sentences[i].start;
-          sStamps.push(convertMsToTime(sentences[i].start));
-          speaks.push(sentences[i].speaker);
-        }
+      for (let i = 0; i < questions.length; i++) {
+        qDur += questions[i].end - questions[i].start;
+        sStamps.push(convertMsToTime(questions[i].start));
+        speaks.push(questions[i].speaker);
       }
       it = 0;
       setQuestioningTime(convertMsToTime(qDur));
       setTimes(sStamps);
+
       setSpeakers(speaks);
       return sStamps;
     }
@@ -334,8 +304,6 @@ export default function Submission() {
     });
 
     setLabeledQuestions(labeled);
-
-    return labeled;
   }
 
   function removeQuestion(idx) {
@@ -391,7 +359,7 @@ export default function Submission() {
   function setTimeChartData() {
     if (labeledQuestions) {
       let data = [];
-      //console.log("labeledQuestions: ", labeledQuestions);
+      //
       //make initial rows
       let categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
       for (let i = 0; i < categories.length; i++) {
@@ -457,9 +425,9 @@ export default function Submission() {
   const barChartProps = {
     options: {
       //plotOptions: {
-        //bar: {
-          //distributed: true
-        //}
+      //bar: {
+      //distributed: true
+      //}
       //},
       title: {
         text: "Question Category Distribution",
@@ -488,46 +456,54 @@ export default function Submission() {
         categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create", "Uncategorized"],
       },
     },
-    series: [{
-      data: [
-        {
-          x: "Knowledge",
-          y: getAmountOfLabel("Knowledge"),
-          fillColor: '#0000FF',
-          strokeColor: '#000000'
-        }, {
-          x: "Understand",
-          y: getAmountOfLabel("Understand"),
-          fillColor: '#D42AC8',
-          strokeColor: '#C23829'
-        }, {
-          x: "Apply", 
-          y: getAmountOfLabel("Apply"),
-          fillColor: '#009400',
-          strokeColor: '#C23829'
-        }, {
-          x: "Analyze",
-          y: getAmountOfLabel("Analyze"),
-          fillColor: '#FF7300',
-          strokeColor: '#C23829'
-        }, {
-          x: "Evaluate",
-          y: getAmountOfLabel("Evaluate"),
-          fillColor: '#FFC400',
-          strokeColor: '#000000'
-        }, {
-          x: "Create",
-          y: getAmountOfLabel("Create"),
-          fillColor: '#7C7670',
-          strokeColor: '#C23829'
-        }, {
-          x: "Uncategorized",
-          y: getAmountOfLabel("Uncategorized"),
-          fillColor: '#FF0000',
-          strokeColor: '#C23829'
-        }
-      ]  
-    }]
+    series: [
+      {
+        data: [
+          {
+            x: "Knowledge",
+            y: getAmountOfLabel("Knowledge"),
+            fillColor: "#0000FF",
+            strokeColor: "#000000",
+          },
+          {
+            x: "Understand",
+            y: getAmountOfLabel("Understand"),
+            fillColor: "#D42AC8",
+            strokeColor: "#C23829",
+          },
+          {
+            x: "Apply",
+            y: getAmountOfLabel("Apply"),
+            fillColor: "#009400",
+            strokeColor: "#C23829",
+          },
+          {
+            x: "Analyze",
+            y: getAmountOfLabel("Analyze"),
+            fillColor: "#FF7300",
+            strokeColor: "#C23829",
+          },
+          {
+            x: "Evaluate",
+            y: getAmountOfLabel("Evaluate"),
+            fillColor: "#FFC400",
+            strokeColor: "#000000",
+          },
+          {
+            x: "Create",
+            y: getAmountOfLabel("Create"),
+            fillColor: "#7C7670",
+            strokeColor: "#C23829",
+          },
+          {
+            x: "Uncategorized",
+            y: getAmountOfLabel("Uncategorized"),
+            fillColor: "#FF0000",
+            strokeColor: "#C23829",
+          },
+        ],
+      },
+    ],
   };
 
   const pieChartProps = {
@@ -681,7 +657,6 @@ export default function Submission() {
           className="btn btn-primary"
           data-bs-toggle="modal"
           data-bs-target="#progressModal"
-          id="submission-main"
           onClick={() => handleSubmission({selectedFile})}
         >
           Submit
@@ -722,21 +697,18 @@ export default function Submission() {
           <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
             <h1>Full Transcript</h1>
             <div className="lead" style={{ backgroundColor: "white" }}>
-              <table className="transcriptTable">
-                {sentences.map((sentence) => (
-                  <tbody>
-                    <p className="sentence">
-                      <tr>
-                        <td>
-                          <span className="transcript-time">{convertMsToTime(sentence.start)}</span>
-                          <span className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker} :</span>
-                          <span className="transcript-text">{sentence.text}</span>
-                        </td>
-                      </tr>
-                    </p>
-                  </tbody>
-                ))}
-              </table>
+              {sentences.map((sentence) => (
+                <div className="sentence">
+                  <div className="sentence-transcript">
+                    <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
+                    <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
+                    <div className="transcript-text">{sentence.text}</div>
+                  </div>
+                  <button className="add-question-button" onClick={() => handleAddQuestion(sentence)}>
+                    Add as a question
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
           <div className="card-deck mb-3 text-center">
@@ -762,12 +734,19 @@ export default function Submission() {
                     </thead>
                     <tbody>
                       {questions &&
+                        times &&
                         questions.map((question, index) => (
                           <tr className="question">
                             <td>{times[index]}</td>
-                            <td>"{question.text}"</td>
+                            <td id="question-table-question">"{question.text}"</td>
                             <td>{speakers[index]}</td>
-                            <td>{respTime[question.end]}</td>
+                            <td>
+                              {respTime[question.end] < 1
+                                ? "< 1 second"
+                                : respTime[question.end] === "No Response"
+                                ? "No Response"
+                                : respTime[question.end] + " seconds"}
+                            </td>
                             <td>{labeledQuestions[index]}</td>
                             <div className="question-options">
                               <Dropdown>
@@ -850,7 +829,7 @@ export default function Submission() {
           </div>
 
           <div>
-            <button onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
+            <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
               Download PDF
             </button>
             <button onClick={() => saveUserObject()} className='btn btn-primary'>
