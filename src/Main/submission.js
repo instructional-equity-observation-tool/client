@@ -31,7 +31,6 @@ export default function Submission() {
   const [questions, setQuestions] = useState();
   const [respTime, setRespTime] = useState();
   const [labeledQuestions, setLabeledQuestions] = useState();
-  console.log("labeledQuestions: ", labeledQuestions);
   const [questioningTime, setQuestioningTime] = useState();
   const [isAudio, setIsAudio] = useState(false);
   const [isVideo, setIsVideo] = useState(false);
@@ -43,7 +42,7 @@ export default function Submission() {
 
   const location = useLocation();
   const userReportToLoad = location.state?.data
-
+  const userReportLocation = location.state?.location
   useEffect(() => {
     checkLoadReport();
     if (sentences) {
@@ -77,6 +76,7 @@ export default function Submission() {
   }
 
   async function saveUserObject() {
+
     AWS.config.update({
       region: "us-east-2",
       apiVersion: "latest",
@@ -85,35 +85,44 @@ export default function Submission() {
         secretAccessKey: process.env.REACT_APP_SECRET_ID,
       },
     });
+
     const s3 = new AWS.S3();
-
     if(userReportToLoad){
-      var userObject = userReportToLoad;
+      var data = {
+        Bucket: "user-analysis-objs183943-staging",
+        Key: userReportLocation,
+        Body: JSON.stringify(sentences),
+        ContentEncoding: 'base64',
+        ContentType: 'application/json',
+        ACL: 'public-read',
+      }; 
+
+      s3.putObject(data, function (err, data) {
+        if (err) {
+        } else {
+          console.log("successfully uploaded")
+        }
+      });
     }else{
-      var userObject = sentences;
+      const user = await Auth.currentAuthenticatedUser();
+      const folderName = user.username;
+      const location = folderName + "/" + reportName;
+      var data = {
+        Bucket: "user-analysis-objs183943-staging",
+        Key: location,
+        Body: JSON.stringify(sentences),
+        ContentEncoding: 'base64',
+        ContentType: 'application/json',
+        ACL: 'public-read',
+      }; 
+      s3.putObject(data, function (err, data) {
+        if (err) {
+        } else {
+          console.log("successfully uploaded")
+        }
+      });
+
     }
-    
-    //var buf = Buffer.from(JSON.stringify(userObject));
-    const user = await Auth.currentAuthenticatedUser();
-
-    const folderName = user.username;
-
-    const location = folderName + "/" + reportName;
-
-    var data = {
-      Bucket: "user-analysis-objs183943-staging",
-      Key: location,
-      Body: JSON.stringify(userObject),
-      ContentEncoding: 'base64',
-      ContentType: 'application/json',
-      ACL: 'public-read',
-    }; 
-    s3.putObject(data, function (err, data) {
-      if (err) {
-      } else {
-        console.log("successfully uploaded")
-      }
-    });
   }
 
   function handleFileChange(event) {
@@ -208,14 +217,31 @@ export default function Submission() {
   function findQuestions() {
     let qs = [];
     if (sentences) {
-      for (let i = 0; i < sentences.length; i++) {
-        if (sentences[i].text.includes("?")) {
-          qs.push(sentences[i]);
+
+      if(userReportToLoad){
+        for(let i = 0; i < userReportToLoad.length; i++){
+          if(userReportToLoad[i].isQuestion === true){
+            qs.push(userReportToLoad[i])
+          }
         }
+        setQuestions(qs);
+        findQuestionsLabels(qs);
+        return qs; 
+      }else{
+        for (let i = 0; i < sentences.length; i++) {
+          if (sentences[i].text.includes("?")) {
+            qs.push(sentences[i]);
+            sentences[i].isQuestion = true;
+            sentences[i].label = "";
+          }else{
+            sentences[i].label = "non-question";
+          }
+        }
+          setQuestions(qs);
+          findQuestionsLabels(qs);
+          return qs;
       }
-      setQuestions(qs);
-      findQuestionsLabels(qs);
-      return qs;
+
     }
   }
 
@@ -230,8 +256,8 @@ export default function Submission() {
 
         if (isCurrentQuestion) {
           acc[current.end] = isNextNonQuestionAndDifferentSpeaker ? (arr[index + 1].start - current.end) / 1000 : "No Response";
-          console.log("current.end: ", current.end);
-          console.log("arr[index + 1].start: ", arr[index + 1].start);
+          // console.log("current.end: ", current.end);
+          // console.log("arr[index + 1].start: ", arr[index + 1].start);
         }
         return acc;
       }, {});
@@ -281,6 +307,7 @@ export default function Submission() {
   }
 
   function findQuestionsLabels(quests) {
+    let labeled = [quests.length]
     const categoryMap = {
       Knowledge: knowledgeArray,
       Analyze: analyzeArray,
@@ -290,23 +317,50 @@ export default function Submission() {
       Understand: understandArray,
     };
 
-    const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
+    if(userReportToLoad){
+      labeled = userReportToLoad.filter(function(sentence){
+          if (sentence.label != "non-question"){
+            console.log("right here=", sentence.label)
+            return sentence.label;
+          }
+      })
+      console.log(sentences)
+      setLabeledQuestions(labeled);
+    }else{
+      const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
 
-    const findCategories = (word) =>
-      Object.keys(categoryMap)
+      const findCategories = (word) =>
+       Object.keys(categoryMap)
         .filter((key) => categoryMap[key].includes(word))
         .join(" or ");
 
-    const labeled = quests.map((quest) => {
-      const categories = quest.words
-        .map((wordObj) => sanitizeWord(wordObj.text))
-        .map(findCategories)
-        .filter((category) => category.length > 0);
+      labeled = quests.map((quest) => {
+        const categories = quest.words
+         .map((wordObj) => sanitizeWord(wordObj.text))
+         .map(findCategories)
+         .filter((category) => category.length > 0);
+        return categories.length > 0 ? categories.join(" or ") : "Uncategorized";
+      });
+      // newLabeledObj = sentences.filter(function(sentence){
+      //   if(sentence.isQuestion === true){
+      //     return sentence
+      //   }
+      // })
 
-      return categories.length > 0 ? categories.join(" or ") : "Uncategorized";
-    });
-    console.log("LABELED", labeled);
-    setLabeledQuestions(labeled);
+      for(let i = 0; i < quests.length; i++){
+          quests[i].label = labeled[i];
+      }
+
+      for(let j = 0; j < quests.length; j++){
+          for(let k = 0; k < sentences.length; k++){
+            if(quests[j].start == sentences[k].start){
+              sentences[k].label = quests[j].label
+            }
+          }
+        } 
+        console.log(labeled)
+        setLabeledQuestions(quests);
+    }
   }
 
   function removeQuestion(idx) {
@@ -319,15 +373,23 @@ export default function Submission() {
 
   function selectLabel(index, label) {
     let newLabeledQuestions = [...labeledQuestions];
-    newLabeledQuestions[index] = label;
+    newLabeledQuestions[index].label = label;
     setLabeledQuestions(newLabeledQuestions);
+
+    for(let j = 0; j < labeledQuestions.length; j++){
+      for(let k = 0; k < sentences.length; k++){
+        if(labeledQuestions[j].start == sentences[k].start){
+          sentences[k].label = labeledQuestions[j].label
+        }
+      }
+    } 
   }
 
   function getAmountOfLabel(label) {
     let amount = 0;
     if (labeledQuestions) {
       for (let i = 0; i < labeledQuestions.length; i++) {
-        if (labeledQuestions[i] == label) {
+        if (labeledQuestions[i].label == label) {
           amount++;
         }
       }
@@ -371,13 +433,13 @@ export default function Submission() {
       }
 
       for (let i = 0; i < labeledQuestions.length; i++) {
-        if (categories.includes(labeledQuestions[i])) {
+        if (categories.includes(labeledQuestions[i].label)) {
           //if(convertMsToTime(((questions[i].end / 1000) - (questions[i].start / 1000))) < 5){
           //let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 2]);
           //data.push(timeListObj);
           //}
           //else{
-          let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, questions[i].start / 1000 + 5]);
+          let timeListObj = new timeObj(labeledQuestions[i].label, [questions[i].start / 1000, questions[i].start / 1000 + 5]);
           data.push(timeListObj);
           //}
         }
@@ -751,7 +813,7 @@ export default function Submission() {
                                 ? "No Response"
                                 : respTime[question.end] + " seconds"}
                             </td>
-                            <td>{labeledQuestions[index]}</td>
+                            <td>{labeledQuestions[index].label}</td>
                             <div className="question-options">
                               <Dropdown>
                                 <Dropdown.Toggle variant="sm" id="dropdown-basic">

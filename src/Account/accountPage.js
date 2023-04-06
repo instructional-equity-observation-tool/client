@@ -15,6 +15,7 @@ export default function Account(){
     const [reportLoaded, setReportLoaded] = useState(false);
     const [listFiles, setListFiles] = useState([]);
     const [filename, setFilename] = useState();
+    const[location, setLocation] = useState();
     const [userObj, setUserObj] = useState({
         name: '',
         username: '',
@@ -120,12 +121,11 @@ export default function Account(){
         event.preventDefault();
         const s3 = new AWS.S3();
         const user = await Auth.currentAuthenticatedUser();
-        const location = key
-        console.log(location)
+        setLocation(key)
 
         let params = {
             Bucket: 'user-analysis-objs183943-staging',
-            Key: location,
+            Key: key,
             ResponseContentType: 'application/json'
         }
 
@@ -173,7 +173,7 @@ export default function Account(){
                             {reportLoaded ? (
                                 <Link to="/home" state={{
                                     data: report,
-        
+                                    location: location,
                                 }} className="btn btn-success">LOAD REPORT</Link>
                             ) : null}
                             </ul>
