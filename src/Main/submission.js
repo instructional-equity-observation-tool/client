@@ -19,7 +19,7 @@ import Chart from "react-apexcharts";
 import { Auth } from "aws-amplify";
 import AWS from "aws-sdk";
 import { Buffer } from "buffer";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Submission() {
 
@@ -39,6 +39,8 @@ export default function Submission() {
   const [selectedFile, setSelectedFile] = useState("");
   const [reportName, setReportName] = useState("");
   const [fileContent, setFileContent] = useState();
+  const[successfullUpload, setSuccessfullUpload] = useState(false);
+  let navigate = useNavigate();
 
   const location = useLocation();
   const userReportToLoad = location.state?.data
@@ -51,7 +53,6 @@ export default function Submission() {
       toResponse(); 
       printTimes();
       setCompleted(0);
-      // hideModal();
     }
   }, [sentences]);
 
@@ -65,7 +66,7 @@ export default function Submission() {
 
   function checkLoadReport(){
     if(userReportToLoad){
-      document.getElementById('submission-main').click();
+      handleSubmission();
     }
   }
 
@@ -99,7 +100,9 @@ export default function Submission() {
 
       s3.putObject(data, function (err, data) {
         if (err) {
+          console.log(err)
         } else {
+          setSuccessfullUpload(true)
           console.log("successfully uploaded")
         }
       });
@@ -117,7 +120,9 @@ export default function Submission() {
       }; 
       s3.putObject(data, function (err, data) {
         if (err) {
+          console.log(err)
         } else {
+          setSuccessfullUpload(true)
           console.log("successfully uploaded")
         }
       });
@@ -152,22 +157,23 @@ export default function Submission() {
     if(userReportToLoad){
       setSentences(userReportToLoad);
     }else{
-      // showModal();
-      // document.getElementById('name-report').readonly = true;
-      // let interval = setInterval(() => {
-      //   it += 1;
-      //   setCompleted(it);
-      //   if (it === 95) {
-      //     clearInterval(interval);
-      //     it = 0;
-      //   }
-      // }, 2000);
+      showModal();
+      document.getElementById('name-report').readonly = true;
+      let interval = setInterval(() => {
+        it += 1;
+        setCompleted(it);
+        if (it === 95) {
+          clearInterval(interval);
+          it = 0;
+        }
+      }, 2000);
 
       const audioUrl = await uploadFile(fileContent);
       const transcriptionResult = await transcribeFile(audioUrl);
-      console.log("transcriptionResult: ", transcriptionResult);
+      // console.log("transcriptionResult: ", transcriptionResult);
       setSentences(transcriptionResult);
       setIsAnalyzing(false);
+      hideModal();
     }
   };
 
@@ -262,7 +268,7 @@ export default function Submission() {
         return acc;
       }, {});
       setRespTime(stamps);
-      console.log("stamps: ", stamps);
+      // console.log("stamps: ", stamps);
     }
   }
 
@@ -320,11 +326,10 @@ export default function Submission() {
     if(userReportToLoad){
       labeled = userReportToLoad.filter(function(sentence){
           if (sentence.label != "non-question"){
-            console.log("right here=", sentence.label)
             return sentence.label;
           }
       })
-      console.log(sentences)
+      // console.log(sentences)
       setLabeledQuestions(labeled);
     }else{
       const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
@@ -358,7 +363,7 @@ export default function Submission() {
             }
           }
         } 
-        console.log(labeled)
+        // console.log(labeled)
         setLabeledQuestions(quests);
     }
   }
@@ -669,14 +674,24 @@ export default function Submission() {
     }
   }
 
+
+  function reloadPage(){
+    navigate("/home")
+    window.location.reload();
+  }
+
   return (
     <div>
       <div>
-        <label className="form-label" htmlFor="customFile">
-          <h4>Please upload an audio or video recording for transcription</h4>
-          <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
-        </label>
-        <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
+        {!userReportToLoad ? (
+          <div>
+              <label className="form-label" htmlFor="customFile">
+              <h4>Please upload an audio or video recording for transcription</h4>
+              <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
+            </label>
+            <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
+         </div>
+        ): null}
         {isAudio ? (
           <div>
             <p>FILE SUCCESSFULLY UPLOADED</p>
@@ -717,7 +732,12 @@ export default function Submission() {
         ) : (
           <p></p>
         )}
-        <button
+        {userReportToLoad ? (
+          <p>{userReportLocation.substring(userReportLocation.indexOf("/") + 1)}</p>
+        ): <p></p>}
+
+        {!userReportToLoad ? (
+          <button
           type="button"
           className="btn btn-primary"
           data-bs-toggle="modal"
@@ -727,6 +747,18 @@ export default function Submission() {
         >
           Submit
         </button>
+         ): (
+          <button
+          type="button"
+          className="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#progressModal"
+          id="submission-main"
+          onClick={() => reloadPage()}
+        >
+          Upload a new file
+        </button>
+         )} 
         <div className="addEmployee">
           <div className="modal fade" ref={modalRef} tabIndex="-1" style={{ marginTop: "115px" }}>
             <div className="modal-dialog">
@@ -895,6 +927,9 @@ export default function Submission() {
           </div>
 
           <div>
+            {successfullUpload ? (
+              <p>File Save Success</p>
+            ): null}
             <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
               Download PDF
             </button>

@@ -143,6 +143,26 @@ export default function Account(){
         setReportLoaded(true);
     }
 
+
+    async function deleteUserReport(key, event){
+        // event.preventDefault();
+        const s3 = new AWS.S3();
+        const user = await Auth.currentAuthenticatedUser();
+
+        let params = {
+            Bucket: 'user-analysis-objs183943-staging',
+            Key: key,
+        }
+
+       s3.deleteObject(params, function (err, data){
+            if(err){
+                console.log(err)
+            }else{
+                console.log(data)
+            }
+        })
+    }
+
     return(
         <div className="container">
             <div className="main-body">
@@ -168,13 +188,18 @@ export default function Account(){
                                 listFiles.map((name, index) => (
                                     <li className='list-group-item' key={index}>
                                         <button className="btn btn-primary" onClick={(e) => loadUserReport(name.Key, e)}>{name.Key.substring(name.Key.indexOf("/") + 1)}</button>   
+                                        {/* <button className="btn btn-danger" onClick={(e) => deleteUserReport(name.Key, e)}>Delete</button> */}
                                     </li>         
                             ))}
                             {reportLoaded ? (
-                                <Link to="/home" state={{
+                                <div>
+                                    <Link to="/home" state={{
                                     data: report,
                                     location: location,
                                 }} className="btn btn-success">LOAD REPORT</Link>
+                                </div>
+                                
+                                
                             ) : null}
                             </ul>
                         </div>
