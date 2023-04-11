@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { knowledgeArray } from "../expertArrays/knowledge";
 import { understandArray } from "../expertArrays/understand";
 import { applyArray } from "../expertArrays/apply";
@@ -22,12 +22,13 @@ import { Buffer } from "buffer";
 import { useLocation } from "react-router-dom";
 
 export default function Submission() {
-
   const [completed, setCompleted] = useState(0);
   const [transcript, setTranscript] = useState();
   const [sentences, setSentences] = useState();
+
   const [times, setTimes] = useState();
   const [speakers, setSpeakers] = useState();
+
   const [questions, setQuestions] = useState();
   const [respTime, setRespTime] = useState();
   const [labeledQuestions, setLabeledQuestions] = useState();
@@ -39,16 +40,21 @@ export default function Submission() {
   const [selectedFile, setSelectedFile] = useState("");
   const [reportName, setReportName] = useState("");
   const [fileContent, setFileContent] = useState();
+  const [show, setShow] = useState(false);
+  const [isRelabelingSpeaker, setIsRelabelingSpeaker] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   const location = useLocation();
-  const userReportToLoad = location.state?.data
-  const userReportLocation = location.state?.location
+  const userReportToLoad = location.state?.data;
+  const userReportLocation = location.state?.location;
+
   useEffect(() => {
     checkLoadReport();
     if (sentences) {
       createTranscript();
       findQuestions();
-      toResponse(); 
+      findSpeakers();
+      toResponse();
       printTimes();
       setCompleted(0);
       // hideModal();
@@ -62,13 +68,19 @@ export default function Submission() {
     }
   }, [questions]);
 
+  function findSpeakers() {
+    const speakersSet = new Set(speakers);
 
-  function checkLoadReport(){
-    if(userReportToLoad){
-      document.getElementById('submission-main').click();
+    sentences.forEach((sentence) => {
+      speakersSet.add(sentence.speaker);
+    });
+    setSpeakers(speakersSet);
+  }
+  function checkLoadReport() {
+    if (userReportToLoad) {
+      document.getElementById("submission-main").click();
     }
   }
-
 
   function handleInputChange(event) {
     event.persist();
@@ -76,7 +88,6 @@ export default function Submission() {
   }
 
   async function saveUserObject() {
-
     AWS.config.update({
       region: "us-east-2",
       apiVersion: "latest",
@@ -87,23 +98,22 @@ export default function Submission() {
     });
 
     const s3 = new AWS.S3();
-    if(userReportToLoad){
+    if (userReportToLoad) {
       var data = {
         Bucket: "user-analysis-objs183943-staging",
         Key: userReportLocation,
         Body: JSON.stringify(sentences),
-        ContentEncoding: 'base64',
-        ContentType: 'application/json',
-        ACL: 'public-read',
-      }; 
+        ContentEncoding: "base64",
+        ContentType: "application/json",
+        ACL: "public-read",
+      };
 
       s3.putObject(data, function (err, data) {
         if (err) {
         } else {
-          console.log("successfully uploaded")
         }
       });
-    }else{
+    } else {
       const user = await Auth.currentAuthenticatedUser();
       const folderName = user.username;
       const location = folderName + "/" + reportName;
@@ -111,17 +121,15 @@ export default function Submission() {
         Bucket: "user-analysis-objs183943-staging",
         Key: location,
         Body: JSON.stringify(sentences),
-        ContentEncoding: 'base64',
-        ContentType: 'application/json',
-        ACL: 'public-read',
-      }; 
+        ContentEncoding: "base64",
+        ContentType: "application/json",
+        ACL: "public-read",
+      };
       s3.putObject(data, function (err, data) {
         if (err) {
         } else {
-          console.log("successfully uploaded")
         }
       });
-
     }
   }
 
@@ -149,9 +157,9 @@ export default function Submission() {
 
   let handleSubmission = async () => {
     setIsAnalyzing(true);
-    if(userReportToLoad){
+    if (userReportToLoad) {
       setSentences(userReportToLoad);
-    }else{
+    } else {
       // showModal();
       // document.getElementById('name-report').readonly = true;
       // let interval = setInterval(() => {
@@ -165,7 +173,7 @@ export default function Submission() {
 
       const audioUrl = await uploadFile(fileContent);
       const transcriptionResult = await transcribeFile(audioUrl);
-      console.log("transcriptionResult: ", transcriptionResult);
+
       setSentences(transcriptionResult);
       setIsAnalyzing(false);
     }
@@ -181,17 +189,16 @@ export default function Submission() {
     }
   }
 
-  const handleAddQuestion = (sentence) => {
+  const handleAddQuestion = (sentence, event) => {
+    event.stopPropagation();
     if (!questions.some((question) => question.start === sentence.start)) {
-      setQuestions((prevQuestions) => {
-        const updatedQuestions = [...prevQuestions, sentence];
-        const sortedQuestions = updatedQuestions.sort((a, b) => a.start - b.start);
-        const questionIndex = sortedQuestions.findIndex((question) => question === sentence);
-        const updatedLabeledQuestions = [...labeledQuestions];
-        updatedLabeledQuestions.splice(questionIndex, 0, "Uncategorized");
-        setLabeledQuestions(updatedLabeledQuestions);
-        return sortedQuestions;
+      const newSentences = sentences.map((prevSentence) => {
+        if (prevSentence.start === sentence.start) {
+          return { ...prevSentence, isQuestion: true };
+        }
+        return prevSentence;
       });
+      setSentences(newSentences);
     }
   };
 
@@ -217,31 +224,29 @@ export default function Submission() {
   function findQuestions() {
     let qs = [];
     if (sentences) {
-
-      if(userReportToLoad){
-        for(let i = 0; i < userReportToLoad.length; i++){
-          if(userReportToLoad[i].isQuestion === true){
-            qs.push(userReportToLoad[i])
+      if (userReportToLoad) {
+        for (let i = 0; i < userReportToLoad.length; i++) {
+          if (userReportToLoad[i].isQuestion === true) {
+            qs.push(userReportToLoad[i]);
           }
         }
         setQuestions(qs);
         findQuestionsLabels(qs);
-        return qs; 
-      }else{
+        return qs;
+      } else {
         for (let i = 0; i < sentences.length; i++) {
-          if (sentences[i].text.includes("?")) {
+          if (sentences[i].text.includes("?") || sentences[i].isQuestion == true) {
             qs.push(sentences[i]);
             sentences[i].isQuestion = true;
             sentences[i].label = "";
-          }else{
+          } else {
             sentences[i].label = "non-question";
           }
         }
-          setQuestions(qs);
-          findQuestionsLabels(qs);
-          return qs;
+        setQuestions(qs);
+        findQuestionsLabels(qs);
+        return qs;
       }
-
     }
   }
 
@@ -256,13 +261,12 @@ export default function Submission() {
 
         if (isCurrentQuestion) {
           acc[current.end] = isNextNonQuestionAndDifferentSpeaker ? (arr[index + 1].start - current.end) / 1000 : "No Response";
-          // console.log("current.end: ", current.end);
-          // console.log("arr[index + 1].start: ", arr[index + 1].start);
+          //
+          //
         }
         return acc;
       }, {});
       setRespTime(stamps);
-      console.log("stamps: ", stamps);
     }
   }
 
@@ -279,7 +283,6 @@ export default function Submission() {
       it = 0;
       setQuestioningTime(convertMsToTime(qDur));
       setTimes(sStamps);
-
       setSpeakers(speaks);
       return sStamps;
     }
@@ -307,7 +310,7 @@ export default function Submission() {
   }
 
   function findQuestionsLabels(quests) {
-    let labeled = [quests.length]
+    let labeled = [quests.length];
     const categoryMap = {
       Knowledge: knowledgeArray,
       Analyze: analyzeArray,
@@ -317,28 +320,27 @@ export default function Submission() {
       Understand: understandArray,
     };
 
-    if(userReportToLoad){
-      labeled = userReportToLoad.filter(function(sentence){
-          if (sentence.label != "non-question"){
-            console.log("right here=", sentence.label)
-            return sentence.label;
-          }
-      })
-      console.log(sentences)
+    if (userReportToLoad) {
+      labeled = userReportToLoad.filter(function (sentence) {
+        if (sentence.label != "non-question") {
+          return sentence.label;
+        }
+      });
+
       setLabeledQuestions(labeled);
-    }else{
+    } else {
       const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
 
       const findCategories = (word) =>
-       Object.keys(categoryMap)
-        .filter((key) => categoryMap[key].includes(word))
-        .join(" or ");
+        Object.keys(categoryMap)
+          .filter((key) => categoryMap[key].includes(word))
+          .join(" or ");
 
       labeled = quests.map((quest) => {
         const categories = quest.words
-         .map((wordObj) => sanitizeWord(wordObj.text))
-         .map(findCategories)
-         .filter((category) => category.length > 0);
+          .map((wordObj) => sanitizeWord(wordObj.text))
+          .map(findCategories)
+          .filter((category) => category.length > 0);
         return categories.length > 0 ? categories.join(" or ") : "Uncategorized";
       });
       // newLabeledObj = sentences.filter(function(sentence){
@@ -347,19 +349,19 @@ export default function Submission() {
       //   }
       // })
 
-      for(let i = 0; i < quests.length; i++){
-          quests[i].label = labeled[i];
+      for (let i = 0; i < quests.length; i++) {
+        quests[i].label = labeled[i];
       }
 
-      for(let j = 0; j < quests.length; j++){
-          for(let k = 0; k < sentences.length; k++){
-            if(quests[j].start == sentences[k].start){
-              sentences[k].label = quests[j].label
-            }
+      for (let j = 0; j < quests.length; j++) {
+        for (let k = 0; k < sentences.length; k++) {
+          if (quests[j].start == sentences[k].start) {
+            sentences[k].label = quests[j].label;
           }
-        } 
-        console.log(labeled)
-        setLabeledQuestions(quests);
+        }
+      }
+
+      setLabeledQuestions(quests);
     }
   }
 
@@ -376,13 +378,13 @@ export default function Submission() {
     newLabeledQuestions[index].label = label;
     setLabeledQuestions(newLabeledQuestions);
 
-    for(let j = 0; j < labeledQuestions.length; j++){
-      for(let k = 0; k < sentences.length; k++){
-        if(labeledQuestions[j].start == sentences[k].start){
-          sentences[k].label = labeledQuestions[j].label
+    for (let j = 0; j < labeledQuestions.length; j++) {
+      for (let k = 0; k < sentences.length; k++) {
+        if (labeledQuestions[j].start == sentences[k].start) {
+          sentences[k].label = labeledQuestions[j].label;
         }
       }
-    } 
+    }
   }
 
   function getAmountOfLabel(label) {
@@ -489,11 +491,6 @@ export default function Submission() {
 
   const barChartProps = {
     options: {
-      //plotOptions: {
-      //bar: {
-      //distributed: true
-      //}
-      //},
       title: {
         text: "Question Category Distribution",
         align: "left",
@@ -669,6 +666,80 @@ export default function Submission() {
     }
   }
 
+  const handleItemClick = (sentence, speaker) => {
+    handleRelabelSpeaker(sentence, speaker);
+    setIsRelabelingSpeaker(false);
+    setShow(null);
+  };
+
+  function handleRelabelSpeaker(sentence, newSpeaker) {
+    const newSentences = sentences.map((prevSentence) => {
+      if (prevSentence.start === sentence.start) {
+        return { ...prevSentence, speaker: newSpeaker };
+      }
+      return prevSentence;
+    });
+    console.log("sentences: ", sentences);
+    console.log("newSentences: ", newSentences);
+    setSentences(newSentences);
+  }
+
+  const CustomToggle = ({ children, onClick }) => (
+    <div onClick={onClick} style={{ cursor: "pointer" }}>
+      {children}
+    </div>
+  );
+
+  const handleToggle = (event) => {
+    if (show !== null) {
+      event.stopPropagation();
+    }
+    setShow(null);
+  };
+  const handleClickOutside = (event) => {
+    if (!event.target.closest(".dropdown")) {
+      setShow(null);
+    }
+  };
+  const handleAddNewSpeaker = (sentence) => {
+    const newSpeaker = String.fromCharCode(Array.from(new Set(speakers)).length + 65); // Assuming speakers are uppercase letters starting from 'A'
+    handleRelabelSpeaker(sentence, newSpeaker);
+    setIsRelabelingSpeaker(false);
+    setShow(null);
+  };
+
+  const handleBlur = () => {
+    setEditing(false);
+  };
+
+  const handleChangeText = (sentence, event) => {
+    const newSentences = sentences.map((prevSentence) => {
+      if (prevSentence.start === sentence.start) {
+        return { ...prevSentence, text: event.target.value };
+      }
+      return prevSentence;
+    });
+    setSentences(newSentences);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.keyCode === 13) {
+      e.target.blur();
+    }
+  };
+
+  const removeSentence = (removedSentence) => {
+    const updatedSentences = sentences.filter((sentence) => sentence.start !== removedSentence.start);
+    setSentences(updatedSentences);
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
     <div>
       <div>
@@ -707,9 +778,7 @@ export default function Submission() {
           <div>
             <p>FILE SUCCESSFULLY UPLOADED</p>
             <p>Please click SUBMIT to begin analysis</p>
-            {isAnalyzing ? (
-              <p>ANALYZING PLEASE WAIT</p>
-            ): null}
+            {isAnalyzing ? <p>ANALYZING PLEASE WAIT</p> : null}
             <div>
               <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
             </div>
@@ -723,7 +792,7 @@ export default function Submission() {
           data-bs-toggle="modal"
           data-bs-target="#progressModal"
           id="submission-main"
-          onClick={() => handleSubmission({selectedFile})}
+          onClick={() => handleSubmission({ selectedFile })}
         >
           Submit
         </button>
@@ -764,15 +833,57 @@ export default function Submission() {
             <h1>Full Transcript</h1>
             <div className="lead" style={{ backgroundColor: "white" }}>
               {sentences.map((sentence) => (
-                <div className="sentence">
-                  <div className="sentence-transcript">
-                    <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
-                    <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
-                    <div className="transcript-text">{sentence.text}</div>
-                  </div>
-                  <button className="add-question-button" onClick={() => handleAddQuestion(sentence)}>
-                    Add as a question
-                  </button>
+                <div key={sentence.start} onClick={() => setShow(sentence.start)}>
+                  <Dropdown show={show === sentence.start}>
+                    <CustomToggle onClick={(event) => handleToggle(event)}>
+                      <div className="sentence" style={{ backgroundColor: show === sentence.start ? "#F0F0F0" : "white" }}>
+                        <div className="sentence-transcript">
+                          <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
+                          <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
+                          {editing === sentence.start ? (
+                            <input
+                              className="edit-text"
+                              type="text"
+                              value={sentence.text}
+                              onBlur={handleBlur}
+                              onChange={(event) => handleChangeText(sentence, event)}
+                              onKeyDown={(event) => handleKeyPress(event)}
+                              autoFocus
+                            />
+                          ) : (
+                            <div className="transcript-text">{sentence.text}</div>
+                          )}
+                        </div>
+                      </div>
+                    </CustomToggle>
+                    <Dropdown.Menu style={{ backgroundColor: "#F0F0F0" }}>
+                      {!isRelabelingSpeaker ? (
+                        <div>
+                          <Dropdown.Item
+                            onClick={(event) => {
+                              handleAddQuestion(sentence, event);
+                              handleToggle(null);
+                            }}
+                          >
+                            Add as a question
+                          </Dropdown.Item>
+                          <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
+                          <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
+                          <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
+                          <Dropdown.Item>Insert sentence after</Dropdown.Item>
+                        </div>
+                      ) : (
+                        <div>
+                          {Array.from(new Set(speakers.sort())).map((speaker) => (
+                            <Dropdown.Item onClick={() => handleItemClick(sentence, speaker)}>{speaker}</Dropdown.Item>
+                          ))}{" "}
+                          <div onClick={() => handleAddNewSpeaker(sentence)}>
+                            <Dropdown.Item>Label as new speaker</Dropdown.Item>
+                          </div>
+                        </div>
+                      )}
+                    </Dropdown.Menu>
+                  </Dropdown>
                 </div>
               ))}
             </div>
@@ -898,7 +1009,7 @@ export default function Submission() {
             <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
               Download PDF
             </button>
-            <button onClick={() => saveUserObject()} className='btn btn-primary'>
+            <button onClick={() => saveUserObject()} className="btn btn-primary">
               SAVE REPORT
             </button>
           </div>

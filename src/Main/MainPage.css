@@ -19,8 +19,7 @@
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  padding: 5px 10px;
-  margin-left: 10px;
+  padding: 5px 20px;
   line-height: 40px;
 }
 
@@ -28,7 +27,7 @@
   display: flex;
   justify-content: flex-start;
   text-align: left;
-  width: 85%;
+  width: 80%;
 }
 .transcript-time {
   width: 80px;
@@ -38,12 +37,17 @@
 .transcript-speaker {
   width: 100px;
   white-space: nowrap;
-  margin-left: 15px;
+  margin: 0 15px;
 }
 
 .transcript-text {
-  margin-left: 15px;
   width: 800px;
+}
+
+.edit-text {
+  width: 800px;
+  border: 0;
+  outline: 1px solid black;
 }
 
 .add-question-button {
