@@ -247,7 +247,6 @@ export default function Submission() {
           findQuestionsLabels(qs);
           return qs;
       }
-
     }
   }
 
