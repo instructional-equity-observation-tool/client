@@ -470,38 +470,38 @@ export default function Submission() {
       return data;
     }
   }
-  
+
   /*
-  function setTimeLineData() {
-    if (labeledQuestions) {
-      let data = [];
-      let categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
-      let colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00", "#0000FF", "#4B0082"]; // Add colors for each category
-  
-      for (let i = 0; i < labeledQuestions.length; i++) {
-        const categoryIndex = categories.indexOf(labeledQuestions[i]);
-        if (categoryIndex !== -1) {
-          let startTime = new Date(questions[i].start); // Convert the start time to a Date object
-          let timeListObj = {
-            x: startTime, // Use the Date object as the x value
-            y: 0,
-            fillColor: colors[categoryIndex],
-          };
-          data.push(timeListObj);
-        } else if (labeledQuestions[i] === 'Uncategorized') {
-          // Handle "Uncategorized" entries
-          let startTime = new Date(questions[i].start); // Convert the start time to a Date object
-          let timeListObj = {
-            x: startTime, // Use the Date object as the x value
-            y: 0,
-            fillColor: '#808080', // Choose a color for "Uncategorized" entries, e.g., gray
-          };
-          data.push(timeListObj);
-        }
+function setTimeLineData() {
+  const bloomLevels = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
+  const bloomIndices = bloomLevels.reduce((acc, level, index) => {
+    acc[level] = index;
+    return acc;
+  }, {});
+
+  if (labeledQuestions) {
+    let data = [];
+    for (let i = 0; i < labeledQuestions.length; i++) {
+      let endTime;
+      if (i < labeledQuestions.length - 1) {
+        endTime = questions[i + 1].start / 1000;
+      } else {
+        endTime = questions[i].end / 1000;
       }
-      return data;
+
+      const label = labeledQuestions[i].label;
+      if (bloomIndices.hasOwnProperty(label)) {
+        data.push({
+          x: label,
+          y: [questions[i].start / 1000, endTime],
+          index: bloomIndices[label],
+          fillColor: getLabelColor(label),
+        });
+      }
     }
-  }*/
+    return data;
+  }
+}*/
 
   const timeChartProps = {
     series: [
