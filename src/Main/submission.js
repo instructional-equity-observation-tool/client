@@ -10,9 +10,8 @@ import { uploadFile, transcribeFile } from "../utils/assemblyAPI";
 import "./MainPage.css";
 import "./transcript.scss";
 
-import ProgressBar from "../progress";
-import { Modal } from "bootstrap";
 import Dropdown from "react-bootstrap/Dropdown";
+import Spinner from "react-bootstrap/Spinner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Chart from "react-apexcharts";
@@ -22,7 +21,6 @@ import { Buffer } from "buffer";
 import { useLocation } from "react-router-dom";
 
 export default function Submission() {
-  const [completed, setCompleted] = useState(0);
   const [transcript, setTranscript] = useState();
   const [sentences, setSentences] = useState();
 
@@ -37,6 +35,7 @@ export default function Submission() {
   const [isVideo, setIsVideo] = useState(false);
   const [isNeither, setIsNeither] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  console.log("isAnalyzing: ", isAnalyzing);
   const [selectedFile, setSelectedFile] = useState("");
   const [reportName, setReportName] = useState("");
   const [fileContent, setFileContent] = useState();
@@ -56,8 +55,6 @@ export default function Submission() {
       findSpeakers();
       toResponse();
       printTimes();
-      setCompleted(0);
-      // hideModal();
     }
   }, [sentences]);
 
@@ -80,11 +77,6 @@ export default function Submission() {
     if (userReportToLoad) {
       document.getElementById("submission-main").click();
     }
-  }
-
-  function handleInputChange(event) {
-    event.persist();
-    setReportName(event.target.value);
   }
 
   async function saveUserObject() {
@@ -160,17 +152,6 @@ export default function Submission() {
     if (userReportToLoad) {
       setSentences(userReportToLoad);
     } else {
-      // showModal();
-      // document.getElementById('name-report').readonly = true;
-      // let interval = setInterval(() => {
-      //   it += 1;
-      //   setCompleted(it);
-      //   if (it === 95) {
-      //     clearInterval(interval);
-      //     it = 0;
-      //   }
-      // }, 2000);
-
       const audioUrl = await uploadFile(fileContent);
       const transcriptionResult = await transcribeFile(audioUrl);
 
@@ -200,25 +181,6 @@ export default function Submission() {
       });
       setSentences(newSentences);
     }
-  };
-
-  let it = 0;
-
-  const modalRef = useRef();
-
-  const showModal = () => {
-    const modalEle = modalRef.current;
-    const bsModal = new Modal(modalEle, {
-      backdrop: "static",
-      keyboard: false,
-    });
-    bsModal.show();
-  };
-
-  const hideModal = () => {
-    const modalEle = modalRef.current;
-    const bsModal = Modal.getInstance(modalEle);
-    bsModal.hide();
   };
 
   function findQuestions() {
@@ -280,7 +242,6 @@ export default function Submission() {
         sStamps.push(convertMsToTime(questions[i].start));
         speaks.push(questions[i].speaker);
       }
-      it = 0;
       setQuestioningTime(convertMsToTime(qDur));
       setTimes(sStamps);
       setSpeakers(speaks);
@@ -750,142 +711,123 @@ export default function Submission() {
         <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
         {isAudio ? (
           <div>
-            <p>FILE SUCCESSFULLY UPLOADED</p>
+            <p>Click "Submit" to begin file analysis</p>
             <audio controls id="audio-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </audio>
-            <div>
-              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
-            </div>
+            {isAnalyzing ? (
+              <div>
+                <Spinner className="spinner" animation="border" role="status"></Spinner>
+                <p>Analysis in progress...</p>
+              </div>
+            ) : null}
           </div>
         ) : (
           <p></p>
         )}
         {isVideo ? (
           <div>
-            <p>FILE SUCCESSFULLY UPLOADED</p>
+            <p>Click "Submit" to begin file analysis</p>
             <video controls id="video-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </video>
-            <div>
-              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
-            </div>
+            {isAnalyzing ? (
+              <div>
+                <Spinner className="spinner" animation="border" role="status"></Spinner>
+                <p>Analysis in progress...</p>
+              </div>
+            ) : null}
           </div>
         ) : (
           <p></p>
         )}
         {isNeither ? (
           <div>
-            <p>FILE SUCCESSFULLY UPLOADED</p>
+            <p>Click "Submit" to begin file analysis</p>
             <p>Please click SUBMIT to begin analysis</p>
-            {isAnalyzing ? <p>ANALYZING PLEASE WAIT</p> : null}
-            <div>
-              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
-            </div>
+            {isAnalyzing ? (
+              <div>
+                <Spinner className="spinner" animation="border" role="status"></Spinner>
+                <p>Analysis in progress...</p>
+              </div>
+            ) : null}
           </div>
         ) : (
           <p></p>
         )}
-        <button
-          type="button"
-          className="btn btn-primary"
-          data-bs-toggle="modal"
-          data-bs-target="#progressModal"
-          id="submission-main"
-          onClick={() => handleSubmission({ selectedFile })}
-        >
-          Submit
-        </button>
-        <div className="addEmployee">
-          <div className="modal fade" ref={modalRef} tabIndex="-1" style={{ marginTop: "115px" }}>
-            <div className="modal-dialog">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title" id="staticBackdropLabel">
-                    Analyzing
-                  </h5>
-                </div>
-                <div className="modal-body">
-                  <div>
-                    <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
-                  </div>
-                  <button
-                    onClick={() => window.location.reload(false)}
-                    style={{
-                      backgroundColor: "dodgerblue",
-                      color: "white",
-                      padding: "5px 15px",
-                      borderRadius: "5px",
-                      border: "0",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {!isAnalyzing && !sentences ? (
+          <button type="button" className="btn btn-primary" id="submission-main" onClick={() => handleSubmission({ selectedFile })}>
+            Submit
+          </button>
+        ) : isAnalyzing ? (
+          <button type="button" className="btn btn-primary" id="submission-main" onClick={() => window.location.reload()}>
+            Cancel
+          </button>
+        ) : null}
       </div>
       {sentences && (
         <div>
           <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
             <h1>Full Transcript</h1>
             <div className="lead" style={{ backgroundColor: "white" }}>
-              {sentences.map((sentence) => (
-                <div key={sentence.start} onClick={() => setShow(sentence.start)}>
-                  <Dropdown show={show === sentence.start}>
-                    <CustomToggle onClick={(event) => handleToggle(event)}>
-                      <div className="sentence" style={{ backgroundColor: show === sentence.start ? "#F0F0F0" : "white" }}>
-                        <div className="sentence-transcript">
-                          <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
-                          <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
-                          {editing === sentence.start ? (
-                            <input
-                              className="edit-text"
-                              type="text"
-                              value={sentence.text}
-                              onBlur={handleBlur}
-                              onChange={(event) => handleChangeText(sentence, event)}
-                              onKeyDown={(event) => handleKeyPress(event)}
-                              autoFocus
-                            />
-                          ) : (
-                            <div className="transcript-text">{sentence.text}</div>
-                          )}
-                        </div>
-                      </div>
-                    </CustomToggle>
-                    <Dropdown.Menu style={{ backgroundColor: "#F0F0F0" }}>
-                      {!isRelabelingSpeaker ? (
-                        <div>
-                          <Dropdown.Item
-                            onClick={(event) => {
-                              handleAddQuestion(sentence, event);
-                              handleToggle(null);
-                            }}
-                          >
-                            Add as a question
-                          </Dropdown.Item>
-                          <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
-                          <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
-                          <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
-                          <Dropdown.Item>Insert sentence after</Dropdown.Item>
-                        </div>
-                      ) : (
-                        <div>
-                          {Array.from(new Set(speakers.sort())).map((speaker) => (
-                            <Dropdown.Item onClick={() => handleItemClick(sentence, speaker)}>{speaker}</Dropdown.Item>
-                          ))}{" "}
-                          <div onClick={() => handleAddNewSpeaker(sentence)}>
-                            <Dropdown.Item>Label as new speaker</Dropdown.Item>
+              <div>
+                {sentences.map((sentence) => (
+                  <div key={sentence.start} onClick={() => setShow(sentence.start)}>
+                    <Dropdown show={show === sentence.start}>
+                      <CustomToggle onClick={(event) => handleToggle(event)}>
+                        <div className="sentence" style={{ backgroundColor: show === sentence.start ? "#F0F0F0" : "white" }}>
+                          <div className="sentence-transcript">
+                            <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
+                            <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
+                            {editing === sentence.start ? (
+                              <input
+                                className="edit-text"
+                                type="text"
+                                value={sentence.text}
+                                onBlur={handleBlur}
+                                onChange={(event) => handleChangeText(sentence, event)}
+                                onKeyDown={(event) => handleKeyPress(event)}
+                                autoFocus
+                              />
+                            ) : (
+                              <div className="transcript-text">{sentence.text}</div>
+                            )}
                           </div>
                         </div>
-                      )}
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </div>
-              ))}
+                      </CustomToggle>
+                      <Dropdown.Menu style={{ backgroundColor: "#F0F0F0" }}>
+                        {!isRelabelingSpeaker ? (
+                          <div>
+                            <Dropdown.Item
+                              onClick={(event) => {
+                                handleAddQuestion(sentence, event);
+                                handleToggle(null);
+                              }}
+                            >
+                              Add as a question
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
+                            <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
+                            <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
+                            <Dropdown.Item>Insert sentence after</Dropdown.Item>
+                          </div>
+                        ) : (
+                          <div>
+                            {Array.from(new Set(speakers.sort())).map((speaker) => (
+                              <Dropdown.Item key={speaker} onClick={() => handleItemClick(sentence, speaker)}>
+                                {speaker}
+                              </Dropdown.Item>
+                            ))}
+                            <div onClick={() => handleAddNewSpeaker(sentence)}>
+                              <Dropdown.Item>Label as new speaker</Dropdown.Item>
+                            </div>
+                          </div>
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           <div className="card-deck mb-3 text-center">
@@ -913,7 +855,7 @@ export default function Submission() {
                       {questions &&
                         times &&
                         questions.map((question, index) => (
-                          <tr className="question">
+                          <tr key={index} className="question">
                             <td>{times[index]}</td>
                             <td id="question-table-question">"{question.text}"</td>
                             <td>{speakers[index]}</td>
@@ -925,7 +867,7 @@ export default function Submission() {
                                 : respTime[question.end] + " seconds"}
                             </td>
                             <td>{labeledQuestions[index].label}</td>
-                            <div className="question-options">
+                            <td className="question-options">
                               <Dropdown>
                                 <Dropdown.Toggle variant="sm" id="dropdown-basic">
                                   Select Type
@@ -979,7 +921,7 @@ export default function Submission() {
                               <button type="button" class="btn btn-danger" onClick={() => removeQuestion(index)}>
                                 Remove
                               </button>
-                            </div>
+                            </td>
                           </tr>
                         ))}
                     </tbody>
