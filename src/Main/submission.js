@@ -19,13 +19,13 @@ import Chart from "react-apexcharts";
 import { Auth } from "aws-amplify";
 import AWS from "aws-sdk";
 import { Buffer } from "buffer";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Submission() {
+
   const [completed, setCompleted] = useState(0);
   const [transcript, setTranscript] = useState();
   const [sentences, setSentences] = useState();
-  console.log("sentences: ", sentences);
 
   const [times, setTimes] = useState();
   const [speakers, setSpeakers] = useState();
@@ -44,21 +44,26 @@ export default function Submission() {
   const [show, setShow] = useState(false);
   const [isRelabelingSpeaker, setIsRelabelingSpeaker] = useState(false);
   const [editing, setEditing] = useState(false);
+  const[successfullUpload, setSuccessfullUpload] = useState(false);
+  let navigate = useNavigate();
 
   const location = useLocation();
   const userReportToLoad = location.state?.data;
   const userReportLocation = location.state?.location;
 
-  useEffect(() => {
+  useEffect(()=> {
     checkLoadReport();
+  }, []);
+
+  useEffect(() => {
     if (sentences) {
       createTranscript();
       findQuestions();
       findSpeakers();
-      toResponse();
+      toResponse(); 
       printTimes();
       setCompleted(0);
-      // hideModal();
+      
     }
   }, [sentences]);
 
@@ -77,11 +82,14 @@ export default function Submission() {
     });
     setSpeakers(speakersSet);
   }
-  function checkLoadReport() {
-    if (userReportToLoad) {
-      document.getElementById("submission-main").click();
+
+
+  function checkLoadReport(){
+    if(userReportToLoad){
+      setSentences(userReportToLoad);
     }
   }
+
 
   function handleInputChange(event) {
     event.persist();
@@ -89,6 +97,7 @@ export default function Submission() {
   }
 
   async function saveUserObject() {
+
     AWS.config.update({
       region: "us-east-2",
       apiVersion: "latest",
@@ -99,22 +108,25 @@ export default function Submission() {
     });
 
     const s3 = new AWS.S3();
-    if (userReportToLoad) {
+    if(userReportToLoad){
       var data = {
         Bucket: "user-analysis-objs183943-staging",
         Key: userReportLocation,
         Body: JSON.stringify(sentences),
-        ContentEncoding: "base64",
-        ContentType: "application/json",
-        ACL: "public-read",
-      };
+        ContentEncoding: 'base64',
+        ContentType: 'application/json',
+        ACL: 'public-read',
+      }; 
 
       s3.putObject(data, function (err, data) {
         if (err) {
+          console.log(err)
         } else {
+          setSuccessfullUpload(true)
+          console.log("successfully uploaded OLD REPORT")
         }
       });
-    } else {
+    }else{
       const user = await Auth.currentAuthenticatedUser();
       const folderName = user.username;
       const location = folderName + "/" + reportName;
@@ -122,15 +134,19 @@ export default function Submission() {
         Bucket: "user-analysis-objs183943-staging",
         Key: location,
         Body: JSON.stringify(sentences),
-        ContentEncoding: "base64",
-        ContentType: "application/json",
-        ACL: "public-read",
-      };
+        ContentEncoding: 'base64',
+        ContentType: 'application/json',
+        ACL: 'public-read',
+      }; 
       s3.putObject(data, function (err, data) {
         if (err) {
+          console.log(err)
         } else {
+          setSuccessfullUpload(true)
+          console.log("successfully uploaded")
         }
       });
+
     }
   }
 
@@ -157,27 +173,24 @@ export default function Submission() {
   }
 
   let handleSubmission = async () => {
-    setIsAnalyzing(true);
-    if (userReportToLoad) {
-      setSentences(userReportToLoad);
-    } else {
-      // showModal();
-      // document.getElementById('name-report').readonly = true;
-      // let interval = setInterval(() => {
-      //   it += 1;
-      //   setCompleted(it);
-      //   if (it === 95) {
-      //     clearInterval(interval);
-      //     it = 0;
-      //   }
-      // }, 2000);
+     setIsAnalyzing(true);
+      showModal();
+      document.getElementById('name-report').readonly = true;
+      let interval = setInterval(() => {
+        it += 1;
+        setCompleted(it);
+        if (it === 95) {
+          clearInterval(interval);
+          it = 0;
+        }
+      }, 2000);
 
       const audioUrl = await uploadFile(fileContent);
       const transcriptionResult = await transcribeFile(audioUrl);
-
+      // console.log("transcriptionResult: ", transcriptionResult);
       setSentences(transcriptionResult);
       setIsAnalyzing(false);
-    }
+      hideModal();
   };
 
   function createTranscript() {
@@ -225,28 +238,30 @@ export default function Submission() {
   function findQuestions() {
     let qs = [];
     if (sentences) {
-      if (userReportToLoad) {
-        for (let i = 0; i < userReportToLoad.length; i++) {
-          if (userReportToLoad[i].isQuestion === true) {
-            qs.push(userReportToLoad[i]);
+
+      if(userReportToLoad){
+        for(let i = 0; i < userReportToLoad.length; i++){
+          if(userReportToLoad[i].isQuestion === true){
+            qs.push(userReportToLoad[i])
           }
         }
         setQuestions(qs);
         findQuestionsLabels(qs);
-        return qs;
-      } else {
+        return qs; 
+      }else{
         for (let i = 0; i < sentences.length; i++) {
           if (sentences[i].text.includes("?") || sentences[i].isQuestion == true) {
             qs.push(sentences[i]);
             sentences[i].isQuestion = true;
             sentences[i].label = "";
-          } else {
+          }else{
+            sentences[i].isQuestion = false;
             sentences[i].label = "non-question";
           }
         }
-        setQuestions(qs);
-        findQuestionsLabels(qs);
-        return qs;
+          setQuestions(qs);
+          findQuestionsLabels(qs);
+          return qs;
       }
     }
   }
@@ -284,6 +299,7 @@ export default function Submission() {
       it = 0;
       setQuestioningTime(convertMsToTime(qDur));
       setTimes(sStamps);
+
       setSpeakers(speaks);
       return sStamps;
     }
@@ -311,7 +327,7 @@ export default function Submission() {
   }
 
   function findQuestionsLabels(quests) {
-    let labeled = [quests.length];
+    let labeled = [quests.length]
     const categoryMap = {
       Knowledge: knowledgeArray,
       Analyze: analyzeArray,
@@ -321,27 +337,27 @@ export default function Submission() {
       Understand: understandArray,
     };
 
-    if (userReportToLoad) {
-      labeled = userReportToLoad.filter(function (sentence) {
-        if (sentence.label != "non-question") {
-          return sentence.label;
-        }
-      });
-
+    if(userReportToLoad){
+      labeled = userReportToLoad.filter(function(sentence){
+          if (sentence.label != "non-question"){
+            return sentence.label;
+          }
+      })
+      // console.log(sentences)
       setLabeledQuestions(labeled);
-    } else {
+    }else{
       const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
 
       const findCategories = (word) =>
-        Object.keys(categoryMap)
-          .filter((key) => categoryMap[key].includes(word))
-          .join(" or ");
+       Object.keys(categoryMap)
+        .filter((key) => categoryMap[key].includes(word))
+        .join(" or ");
 
       labeled = quests.map((quest) => {
         const categories = quest.words
-          .map((wordObj) => sanitizeWord(wordObj.text))
-          .map(findCategories)
-          .filter((category) => category.length > 0);
+         .map((wordObj) => sanitizeWord(wordObj.text))
+         .map(findCategories)
+         .filter((category) => category.length > 0);
         return categories.length > 0 ? categories.join(" or ") : "Uncategorized";
       });
       // newLabeledObj = sentences.filter(function(sentence){
@@ -350,19 +366,19 @@ export default function Submission() {
       //   }
       // })
 
-      for (let i = 0; i < quests.length; i++) {
-        quests[i].label = labeled[i];
+      for(let i = 0; i < quests.length; i++){
+          quests[i].label = labeled[i];
       }
 
-      for (let j = 0; j < quests.length; j++) {
-        for (let k = 0; k < sentences.length; k++) {
-          if (quests[j].start == sentences[k].start) {
-            sentences[k].label = quests[j].label;
+      for(let j = 0; j < quests.length; j++){
+          for(let k = 0; k < sentences.length; k++){
+            if(quests[j].start == sentences[k].start){
+              sentences[k].label = quests[j].label
+            }
           }
-        }
-      }
-
-      setLabeledQuestions(quests);
+        } 
+        // console.log(labeled)
+        setLabeledQuestions(quests);
     }
   }
 
@@ -379,13 +395,13 @@ export default function Submission() {
     newLabeledQuestions[index].label = label;
     setLabeledQuestions(newLabeledQuestions);
 
-    for (let j = 0; j < labeledQuestions.length; j++) {
-      for (let k = 0; k < sentences.length; k++) {
-        if (labeledQuestions[j].start == sentences[k].start) {
-          sentences[k].label = labeledQuestions[j].label;
+    for(let j = 0; j < labeledQuestions.length; j++){
+      for(let k = 0; k < sentences.length; k++){
+        if(labeledQuestions[j].start == sentences[k].start){
+          sentences[k].label = labeledQuestions[j].label
         }
       }
-    }
+    } 
   }
 
   function getAmountOfLabel(label) {
@@ -470,8 +486,8 @@ export default function Submission() {
       return data;
     }
   }
+
   
-  /*
   function setTimeLineData() {
     if (labeledQuestions) {
       let data = [];
@@ -501,13 +517,13 @@ export default function Submission() {
       }
       return data;
     }
-  }*/
+  }
 
   const timeChartProps = {
     series: [
       {
         data: setTimeChartData(),
-      }
+      },
     ],
     options: {
       chart: {
@@ -542,54 +558,13 @@ export default function Submission() {
     },
   };
 
-  /*
-  const timeLineProps = {
-    series: [
-      {
-        name: 'Timeline',
-        data: setTimeLineData(),
-      },
-    ],
-    options: {
-      chart: {
-        type: "rangeBar",
-        height: 350,
-      },
-      title: {
-        text: "Teacher Question Timeline",
-        align: "left",
-        style: {
-          fontSize: "30px",
-          fontWeight: "bold",
-          fontFamily: undefined,
-          color: "#263238",
-        },
-      },
-      xaxis: {
-        type: "datetime", // Change the x-axis type to "datetime"
-      },
-      yaxis: {
-        min: -1,
-        max: 1,
-        labels: {
-          show: false,
-        },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      grid: {
-        yaxis: {
-          lines: {
-            show: false,
-          },
-        },
-      },
-    },
-  };*/
-
   const barChartProps = {
     options: {
+      //plotOptions: {
+      //bar: {
+      //distributed: true
+      //}
+      //},
       title: {
         text: "Question Category Distribution",
         align: "left",
@@ -855,14 +830,23 @@ export default function Submission() {
     };
   }, []);
 
+  function reloadPage(){
+    navigate("/home")
+    window.location.reload();
+  }
+
   return (
     <div>
       <div>
-        <label className="form-label" htmlFor="customFile">
-          <h4>Please upload an audio or video recording for transcription</h4>
-          <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
-        </label>
-        <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
+        {!userReportToLoad ? (
+          <div>
+              <label className="form-label" htmlFor="customFile">
+              <h4>Please upload an audio or video recording for transcription</h4>
+              <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
+            </label>
+            <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
+         </div>
+        ): null}
         {isAudio ? (
           <div>
             <p>FILE SUCCESSFULLY UPLOADED</p>
@@ -893,7 +877,9 @@ export default function Submission() {
           <div>
             <p>FILE SUCCESSFULLY UPLOADED</p>
             <p>Please click SUBMIT to begin analysis</p>
-            {isAnalyzing ? <p>ANALYZING PLEASE WAIT</p> : null}
+            {isAnalyzing ? (
+              <p>ANALYZING PLEASE WAIT</p>
+            ): null}
             <div>
               <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
             </div>
@@ -901,16 +887,33 @@ export default function Submission() {
         ) : (
           <p></p>
         )}
-        <button
+        {userReportToLoad ? (
+          <p>{userReportLocation.substring(userReportLocation.indexOf("/") + 1)}</p>
+        ): <p></p>}
+
+        {!userReportToLoad ? (
+          <button
           type="button"
           className="btn btn-primary"
           data-bs-toggle="modal"
           data-bs-target="#progressModal"
           id="submission-main"
-          onClick={() => handleSubmission({ selectedFile })}
+          onClick={() => handleSubmission({selectedFile})}
         >
           Submit
         </button>
+         ): (
+          <button
+          type="button"
+          className="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#progressModal"
+          id="submission-main"
+          onClick={() => reloadPage()}
+        >
+          Upload a new file
+        </button>
+         )} 
         <div className="addEmployee">
           <div className="modal fade" ref={modalRef} tabIndex="-1" style={{ marginTop: "115px" }}>
             <div className="modal-dialog">
@@ -947,64 +950,60 @@ export default function Submission() {
           <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
             <h1>Full Transcript</h1>
             <div className="lead" style={{ backgroundColor: "white" }}>
-              <div>
-                {sentences.map((sentence) => (
-                  <div key={sentence.start} onClick={() => setShow(sentence.start)}>
-                    <Dropdown show={show === sentence.start}>
-                      <CustomToggle onClick={(event) => handleToggle(event)}>
-                        <div className="sentence" style={{ backgroundColor: show === sentence.start ? "#F0F0F0" : "white" }}>
-                          <div className="sentence-transcript">
-                            <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
-                            <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
-                            {editing === sentence.start ? (
-                              <input
-                                className="edit-text"
-                                type="text"
-                                value={sentence.text}
-                                onBlur={handleBlur}
-                                onChange={(event) => handleChangeText(sentence, event)}
-                                onKeyDown={(event) => handleKeyPress(event)}
-                                autoFocus
-                              />
-                            ) : (
-                              <div className="transcript-text">{sentence.text}</div>
-                            )}
+            {sentences.map((sentence) => (
+                <div key={sentence.start} onClick={() => setShow(sentence.start)}>
+                  <Dropdown show={show === sentence.start}>
+                    <CustomToggle onClick={(event) => handleToggle(event)}>
+                      <div className="sentence" style={{ backgroundColor: show === sentence.start ? "#F0F0F0" : "white" }}>
+                        <div className="sentence-transcript">
+                          <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
+                          <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
+                          {editing === sentence.start ? (
+                            <input
+                              className="edit-text"
+                              type="text"
+                              value={sentence.text}
+                              onBlur={handleBlur}
+                              onChange={(event) => handleChangeText(sentence, event)}
+                              onKeyDown={(event) => handleKeyPress(event)}
+                              autoFocus
+                            />
+                          ) : (
+                            <div className="transcript-text">{sentence.text}</div>
+                          )}
+                        </div>
+                      </div>
+                    </CustomToggle>
+                    <Dropdown.Menu style={{ backgroundColor: "#F0F0F0" }}>
+                      {!isRelabelingSpeaker ? (
+                        <div>
+                          <Dropdown.Item
+                            onClick={(event) => {
+                              handleAddQuestion(sentence, event);
+                              handleToggle(null);
+                            }}
+                          >
+                            Add as a question
+                          </Dropdown.Item>
+                          <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
+                          <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
+                          <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
+                          <Dropdown.Item onClick={() => handleAddNewSentence(sentence)}>Insert sentence after</Dropdown.Item>
+                        </div>
+                      ) : (
+                        <div>
+                          {Array.from(new Set(speakers.sort())).map((speaker) => (
+                            <Dropdown.Item onClick={() => handleItemClick(sentence, speaker)}>{speaker}</Dropdown.Item>
+                          ))}{" "}
+                          <div onClick={() => handleAddNewSpeaker(sentence)}>
+                            <Dropdown.Item>Label as new speaker</Dropdown.Item>
                           </div>
                         </div>
-                      </CustomToggle>
-                      <Dropdown.Menu style={{ backgroundColor: "#F0F0F0" }}>
-                        {!isRelabelingSpeaker ? (
-                          <div>
-                            <Dropdown.Item
-                              onClick={(event) => {
-                                handleAddQuestion(sentence, event);
-                                handleToggle(null);
-                              }}
-                            >
-                              Add as a question
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
-                            <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
-                            <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleAddNewSentence(sentence)}>Insert sentence after</Dropdown.Item>
-                          </div>
-                        ) : (
-                          <div>
-                            {Array.from(new Set(speakers.sort())).map((speaker) => (
-                              <Dropdown.Item key={speaker} onClick={() => handleItemClick(sentence, speaker)}>
-                                {speaker}
-                              </Dropdown.Item>
-                            ))}
-                            <div onClick={() => handleAddNewSpeaker(sentence)}>
-                              <Dropdown.Item>Label as new speaker</Dropdown.Item>
-                            </div>
-                          </div>
-                        )}
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </div>
-                ))}
-              </div>
+                      )}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </div>
+              ))}
             </div>
           </div>
           <div className="card-deck mb-3 text-center">
@@ -1121,20 +1120,17 @@ export default function Submission() {
                   <Chart options={timeChartProps.options} series={timeChartProps.series} type="rangeBar" height={600} width={1300} />
                 </td>
               </tr>
-              <tr>
-                <td>
-                  {//<Chart options={timeLineProps.options} series={timeLineProps.series} type="rangeBar" height={200} width={1300} />
-                  }
-                </td>
-              </tr>
             </div>
           </div>
 
           <div>
+            {successfullUpload ? (
+              <p>File Save Success</p>
+            ): null}
             <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
               Download PDF
             </button>
-            <button onClick={() => saveUserObject()} className="btn btn-primary">
+            <button onClick={() => saveUserObject()} className='btn btn-primary'>
               SAVE REPORT
             </button>
           </div>
