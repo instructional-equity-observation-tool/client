@@ -426,35 +426,87 @@ export default function Submission() {
   function setTimeChartData() {
     if (labeledQuestions) {
       let data = [];
-      //
-      //make initial rows
-      let categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
-      for (let i = 0; i < categories.length; i++) {
-        let timeListObj = new timeObj(categories[i], [0, 0]);
-        data.push(timeListObj);
-      }
+  
+      // Create a dictionary mapping labels to colors
+      const labelColors = {
+        "Knowledge": "#0000FF",
+        "Understand": "#D42AC8",
+        "Apply": "#009400",
+        "Analyze": "#FF7300",
+        "Evaluate": "#FFC400",
+        "Create": "#7C7670",
+      };
 
+      // Calculate the total time range of the timeline
+      const minTime = Math.min(...questions.map((q) => q.start / 1000));
+      const maxTime = Math.max(...questions.map((q) => q.start / 1000));
+      const totalTimeRange = maxTime - minTime;
+      //console.log(totalTimeRange);
+
+      // Define the percentage of the total time range to use as the constant width for the entries
+      const entryWidthPercentage = 0.04; // Adjust this value as needed
+      const constantWidth = totalTimeRange * entryWidthPercentage;
+
+      for (let label in labelColors) {
+        let initialEntry = {
+          x: label,
+          y: [0, 0],
+          fillColor: labelColors[label],
+        };
+        data.push(initialEntry);
+      }
+  
       for (let i = 0; i < labeledQuestions.length; i++) {
-        if (categories.includes(labeledQuestions[i].label)) {
-          //if(convertMsToTime(((questions[i].end / 1000) - (questions[i].start / 1000))) < 5){
-          //let timeListObj = new timeObj(labeledQuestions[i], [questions[i].start / 1000, (questions[i].start / 1000) + 2]);
-          //data.push(timeListObj);
-          //}
-          //else{
-          let timeListObj = new timeObj(labeledQuestions[i].label, [questions[i].start / 1000, questions[i].start / 1000 + 5]);
-          data.push(timeListObj);
-          //}
+        if (labelColors.hasOwnProperty(labeledQuestions[i].label)) {
+          let entry = {
+            x: labeledQuestions[i].label,
+            y: [questions[i].start / 1000, questions[i].start / 1000 + constantWidth],
+            fillColor: labelColors[labeledQuestions[i].label],
+          };
+          data.push(entry);
         }
       }
       return data;
     }
   }
+  
+  /*
+  function setTimeLineData() {
+    if (labeledQuestions) {
+      let data = [];
+      let categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
+      let colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00", "#0000FF", "#4B0082"]; // Add colors for each category
+  
+      for (let i = 0; i < labeledQuestions.length; i++) {
+        const categoryIndex = categories.indexOf(labeledQuestions[i]);
+        if (categoryIndex !== -1) {
+          let startTime = new Date(questions[i].start); // Convert the start time to a Date object
+          let timeListObj = {
+            x: startTime, // Use the Date object as the x value
+            y: 0,
+            fillColor: colors[categoryIndex],
+          };
+          data.push(timeListObj);
+        } else if (labeledQuestions[i] === 'Uncategorized') {
+          // Handle "Uncategorized" entries
+          let startTime = new Date(questions[i].start); // Convert the start time to a Date object
+          let timeListObj = {
+            x: startTime, // Use the Date object as the x value
+            y: 0,
+            fillColor: '#808080', // Choose a color for "Uncategorized" entries, e.g., gray
+          };
+          data.push(timeListObj);
+        }
+      }
+      return data;
+    }
+  }*/
 
   const timeChartProps = {
     series: [
       {
         data: setTimeChartData(),
-      },
+      }
     ],
     options: {
       chart: {
@@ -488,6 +540,52 @@ export default function Submission() {
       },
     },
   };
+
+  /*
+  const timeLineProps = {
+    series: [
+      {
+        name: 'Timeline',
+        data: setTimeLineData(),
+      },
+    ],
+    options: {
+      chart: {
+        type: "rangeBar",
+        height: 350,
+      },
+      title: {
+        text: "Teacher Question Timeline",
+        align: "left",
+        style: {
+          fontSize: "30px",
+          fontWeight: "bold",
+          fontFamily: undefined,
+          color: "#263238",
+        },
+      },
+      xaxis: {
+        type: "datetime", // Change the x-axis type to "datetime"
+      },
+      yaxis: {
+        min: -1,
+        max: 1,
+        labels: {
+          show: false,
+        },
+      },
+      dataLabels: {
+        enabled: false,
+      },
+      grid: {
+        yaxis: {
+          lines: {
+            show: false,
+          },
+        },
+      },
+    },
+  };*/
 
   const barChartProps = {
     options: {
@@ -1000,6 +1098,12 @@ export default function Submission() {
               <tr>
                 <td>
                   <Chart options={timeChartProps.options} series={timeChartProps.series} type="rangeBar" height={600} width={1300} />
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  {//<Chart options={timeLineProps.options} series={timeLineProps.series} type="rangeBar" height={200} width={1300} />
+                  }
                 </td>
               </tr>
             </div>

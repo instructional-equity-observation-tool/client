@@ -1,0 +1,12 @@
+{
+  "resourceName": "s3c2aistoragee5d3ddbc",
+  "bucketName": "c2ai-storage-e5d3ddbc",
+  "policyUUID": "51c2a491",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ]
+}
