@@ -25,6 +25,7 @@ export default function Submission() {
   const [completed, setCompleted] = useState(0);
   const [transcript, setTranscript] = useState();
   const [sentences, setSentences] = useState();
+  console.log("sentences: ", sentences);
 
   const [times, setTimes] = useState();
   const [speakers, setSpeakers] = useState();
@@ -831,6 +832,22 @@ export default function Submission() {
     setSentences(updatedSentences);
   };
 
+  const handleAddNewSentence = (sentencePrior) => {
+    const selectedIndex = sentences.findIndex((s) => s === sentencePrior);
+    const newStart = Math.ceil(sentencePrior.start / 1000) * 1000;
+    const newEnd = newStart + 1000;
+    const newSentence = {
+      start: newStart,
+      end: newEnd,
+      speaker: "A",
+      label: "non-question",
+      isQuestion: false,
+      text: "",
+    };
+    const updatedSentences = [...sentences.slice(0, selectedIndex + 1), newSentence, ...sentences.slice(selectedIndex + 1)];
+    setSentences(updatedSentences);
+  };
+
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -930,60 +947,64 @@ export default function Submission() {
           <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
             <h1>Full Transcript</h1>
             <div className="lead" style={{ backgroundColor: "white" }}>
-              {sentences.map((sentence) => (
-                <div key={sentence.start} onClick={() => setShow(sentence.start)}>
-                  <Dropdown show={show === sentence.start}>
-                    <CustomToggle onClick={(event) => handleToggle(event)}>
-                      <div className="sentence" style={{ backgroundColor: show === sentence.start ? "#F0F0F0" : "white" }}>
-                        <div className="sentence-transcript">
-                          <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
-                          <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
-                          {editing === sentence.start ? (
-                            <input
-                              className="edit-text"
-                              type="text"
-                              value={sentence.text}
-                              onBlur={handleBlur}
-                              onChange={(event) => handleChangeText(sentence, event)}
-                              onKeyDown={(event) => handleKeyPress(event)}
-                              autoFocus
-                            />
-                          ) : (
-                            <div className="transcript-text">{sentence.text}</div>
-                          )}
-                        </div>
-                      </div>
-                    </CustomToggle>
-                    <Dropdown.Menu style={{ backgroundColor: "#F0F0F0" }}>
-                      {!isRelabelingSpeaker ? (
-                        <div>
-                          <Dropdown.Item
-                            onClick={(event) => {
-                              handleAddQuestion(sentence, event);
-                              handleToggle(null);
-                            }}
-                          >
-                            Add as a question
-                          </Dropdown.Item>
-                          <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
-                          <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
-                          <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
-                          <Dropdown.Item>Insert sentence after</Dropdown.Item>
-                        </div>
-                      ) : (
-                        <div>
-                          {Array.from(new Set(speakers.sort())).map((speaker) => (
-                            <Dropdown.Item onClick={() => handleItemClick(sentence, speaker)}>{speaker}</Dropdown.Item>
-                          ))}{" "}
-                          <div onClick={() => handleAddNewSpeaker(sentence)}>
-                            <Dropdown.Item>Label as new speaker</Dropdown.Item>
+              <div>
+                {sentences.map((sentence) => (
+                  <div key={sentence.start} onClick={() => setShow(sentence.start)}>
+                    <Dropdown show={show === sentence.start}>
+                      <CustomToggle onClick={(event) => handleToggle(event)}>
+                        <div className="sentence" style={{ backgroundColor: show === sentence.start ? "#F0F0F0" : "white" }}>
+                          <div className="sentence-transcript">
+                            <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
+                            <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
+                            {editing === sentence.start ? (
+                              <input
+                                className="edit-text"
+                                type="text"
+                                value={sentence.text}
+                                onBlur={handleBlur}
+                                onChange={(event) => handleChangeText(sentence, event)}
+                                onKeyDown={(event) => handleKeyPress(event)}
+                                autoFocus
+                              />
+                            ) : (
+                              <div className="transcript-text">{sentence.text}</div>
+                            )}
                           </div>
                         </div>
-                      )}
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </div>
-              ))}
+                      </CustomToggle>
+                      <Dropdown.Menu style={{ backgroundColor: "#F0F0F0" }}>
+                        {!isRelabelingSpeaker ? (
+                          <div>
+                            <Dropdown.Item
+                              onClick={(event) => {
+                                handleAddQuestion(sentence, event);
+                                handleToggle(null);
+                              }}
+                            >
+                              Add as a question
+                            </Dropdown.Item>
+                            <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
+                            <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
+                            <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleAddNewSentence(sentence)}>Insert sentence after</Dropdown.Item>
+                          </div>
+                        ) : (
+                          <div>
+                            {Array.from(new Set(speakers.sort())).map((speaker) => (
+                              <Dropdown.Item key={speaker} onClick={() => handleItemClick(sentence, speaker)}>
+                                {speaker}
+                              </Dropdown.Item>
+                            ))}
+                            <div onClick={() => handleAddNewSpeaker(sentence)}>
+                              <Dropdown.Item>Label as new speaker</Dropdown.Item>
+                            </div>
+                          </div>
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           <div className="card-deck mb-3 text-center">
