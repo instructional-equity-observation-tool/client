@@ -35,21 +35,21 @@ export default function Submission() {
   const [isVideo, setIsVideo] = useState(false);
   const [isNeither, setIsNeither] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  console.log("isAnalyzing: ", isAnalyzing);
+
   const [selectedFile, setSelectedFile] = useState("");
   const [reportName, setReportName] = useState("");
   const [fileContent, setFileContent] = useState();
   const [show, setShow] = useState(false);
   const [isRelabelingSpeaker, setIsRelabelingSpeaker] = useState(false);
   const [editing, setEditing] = useState(false);
-  const[successfullUpload, setSuccessfullUpload] = useState(false);
+  const [successfullUpload, setSuccessfullUpload] = useState(false);
   let navigate = useNavigate();
 
   const location = useLocation();
   const userReportToLoad = location.state?.data;
   const userReportLocation = location.state?.location;
 
-  useEffect(()=> {
+  useEffect(() => {
     checkLoadReport();
   }, []);
 
@@ -58,7 +58,7 @@ export default function Submission() {
       createTranscript();
       findQuestions();
       findSpeakers();
-      toResponse(); 
+      toResponse();
       printTimes();
     }
   }, [sentences]);
@@ -79,15 +79,13 @@ export default function Submission() {
     setSpeakers(speakersSet);
   }
 
-
-  function checkLoadReport(){
-    if(userReportToLoad){
+  function checkLoadReport() {
+    if (userReportToLoad) {
       setSentences(userReportToLoad);
     }
   }
 
   async function saveUserObject() {
-
     AWS.config.update({
       region: "us-east-2",
       apiVersion: "latest",
@@ -98,25 +96,23 @@ export default function Submission() {
     });
 
     const s3 = new AWS.S3();
-    if(userReportToLoad){
+    if (userReportToLoad) {
       var data = {
         Bucket: "user-analysis-objs183943-staging",
         Key: userReportLocation,
         Body: JSON.stringify(sentences),
-        ContentEncoding: 'base64',
-        ContentType: 'application/json',
-        ACL: 'public-read',
-      }; 
+        ContentEncoding: "base64",
+        ContentType: "application/json",
+        ACL: "public-read",
+      };
 
       s3.putObject(data, function (err, data) {
         if (err) {
-          console.log(err)
         } else {
-          setSuccessfullUpload(true)
-          console.log("successfully uploaded OLD REPORT")
+          setSuccessfullUpload(true);
         }
       });
-    }else{
+    } else {
       const user = await Auth.currentAuthenticatedUser();
       const folderName = user.username;
       const location = folderName + "/" + reportName;
@@ -124,19 +120,16 @@ export default function Submission() {
         Bucket: "user-analysis-objs183943-staging",
         Key: location,
         Body: JSON.stringify(sentences),
-        ContentEncoding: 'base64',
-        ContentType: 'application/json',
-        ACL: 'public-read',
-      }; 
+        ContentEncoding: "base64",
+        ContentType: "application/json",
+        ACL: "public-read",
+      };
       s3.putObject(data, function (err, data) {
         if (err) {
-          console.log(err)
         } else {
-          setSuccessfullUpload(true)
-          console.log("successfully uploaded")
+          setSuccessfullUpload(true);
         }
       });
-
     }
   }
 
@@ -169,10 +162,9 @@ export default function Submission() {
     } else {
       const audioUrl = await uploadFile(fileContent);
       const transcriptionResult = await transcribeFile(audioUrl);
-      // console.log("transcriptionResult: ", transcriptionResult);
       setSentences(transcriptionResult);
       setIsAnalyzing(false);
-      hideModal();
+    }
   };
 
   function createTranscript() {
@@ -201,30 +193,29 @@ export default function Submission() {
   function findQuestions() {
     let qs = [];
     if (sentences) {
-
-      if(userReportToLoad){
-        for(let i = 0; i < userReportToLoad.length; i++){
-          if(userReportToLoad[i].isQuestion === true){
-            qs.push(userReportToLoad[i])
+      if (userReportToLoad) {
+        for (let i = 0; i < userReportToLoad.length; i++) {
+          if (userReportToLoad[i].isQuestion === true) {
+            qs.push(userReportToLoad[i]);
           }
         }
         setQuestions(qs);
         findQuestionsLabels(qs);
-        return qs; 
-      }else{
+        return qs;
+      } else {
         for (let i = 0; i < sentences.length; i++) {
           if (sentences[i].text.includes("?") || sentences[i].isQuestion == true) {
             qs.push(sentences[i]);
             sentences[i].isQuestion = true;
             sentences[i].label = "";
-          }else{
+          } else {
             sentences[i].isQuestion = false;
             sentences[i].label = "non-question";
           }
         }
-          setQuestions(qs);
-          findQuestionsLabels(qs);
-          return qs;
+        setQuestions(qs);
+        findQuestionsLabels(qs);
+        return qs;
       }
     }
   }
@@ -289,7 +280,7 @@ export default function Submission() {
   }
 
   function findQuestionsLabels(quests) {
-    let labeled = [quests.length]
+    let labeled = [quests.length];
     const categoryMap = {
       Knowledge: knowledgeArray,
       Analyze: analyzeArray,
@@ -299,27 +290,27 @@ export default function Submission() {
       Understand: understandArray,
     };
 
-    if(userReportToLoad){
-      labeled = userReportToLoad.filter(function(sentence){
-          if (sentence.label != "non-question"){
-            return sentence.label;
-          }
-      })
-      // console.log(sentences)
+    if (userReportToLoad) {
+      labeled = userReportToLoad.filter(function (sentence) {
+        if (sentence.label != "non-question") {
+          return sentence.label;
+        }
+      });
+      //
       setLabeledQuestions(labeled);
-    }else{
+    } else {
       const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
 
       const findCategories = (word) =>
-       Object.keys(categoryMap)
-        .filter((key) => categoryMap[key].includes(word))
-        .join(" or ");
+        Object.keys(categoryMap)
+          .filter((key) => categoryMap[key].includes(word))
+          .join(" or ");
 
       labeled = quests.map((quest) => {
         const categories = quest.words
-         .map((wordObj) => sanitizeWord(wordObj.text))
-         .map(findCategories)
-         .filter((category) => category.length > 0);
+          .map((wordObj) => sanitizeWord(wordObj.text))
+          .map(findCategories)
+          .filter((category) => category.length > 0);
         return categories.length > 0 ? categories.join(" or ") : "Uncategorized";
       });
       // newLabeledObj = sentences.filter(function(sentence){
@@ -328,19 +319,19 @@ export default function Submission() {
       //   }
       // })
 
-      for(let i = 0; i < quests.length; i++){
-          quests[i].label = labeled[i];
+      for (let i = 0; i < quests.length; i++) {
+        quests[i].label = labeled[i];
       }
 
-      for(let j = 0; j < quests.length; j++){
-          for(let k = 0; k < sentences.length; k++){
-            if(quests[j].start == sentences[k].start){
-              sentences[k].label = quests[j].label
-            }
+      for (let j = 0; j < quests.length; j++) {
+        for (let k = 0; k < sentences.length; k++) {
+          if (quests[j].start == sentences[k].start) {
+            sentences[k].label = quests[j].label;
           }
-        } 
-        // console.log(labeled)
-        setLabeledQuestions(quests);
+        }
+      }
+      //
+      setLabeledQuestions(quests);
     }
   }
 
@@ -357,13 +348,13 @@ export default function Submission() {
     newLabeledQuestions[index].label = label;
     setLabeledQuestions(newLabeledQuestions);
 
-    for(let j = 0; j < labeledQuestions.length; j++){
-      for(let k = 0; k < sentences.length; k++){
-        if(labeledQuestions[j].start == sentences[k].start){
-          sentences[k].label = labeledQuestions[j].label
+    for (let j = 0; j < labeledQuestions.length; j++) {
+      for (let k = 0; k < sentences.length; k++) {
+        if (labeledQuestions[j].start == sentences[k].start) {
+          sentences[k].label = labeledQuestions[j].label;
         }
       }
-    } 
+    }
   }
 
   function getAmountOfLabel(label) {
@@ -405,22 +396,22 @@ export default function Submission() {
   function setTimeChartData() {
     if (labeledQuestions) {
       let data = [];
-  
+
       // Create a dictionary mapping labels to colors
       const labelColors = {
-        "Knowledge": "#0000FF",
-        "Understand": "#D42AC8",
-        "Apply": "#009400",
-        "Analyze": "#FF7300",
-        "Evaluate": "#FFC400",
-        "Create": "#7C7670",
+        Knowledge: "#0000FF",
+        Understand: "#D42AC8",
+        Apply: "#009400",
+        Analyze: "#FF7300",
+        Evaluate: "#FFC400",
+        Create: "#7C7670",
       };
 
       // Calculate the total time range of the timeline
       const minTime = Math.min(...questions.map((q) => q.start / 1000));
       const maxTime = Math.max(...questions.map((q) => q.start / 1000));
       const totalTimeRange = maxTime - minTime;
-      //console.log(totalTimeRange);
+      //
 
       // Define the percentage of the total time range to use as the constant width for the entries
       const entryWidthPercentage = 0.04; // Adjust this value as needed
@@ -434,7 +425,7 @@ export default function Submission() {
         };
         data.push(initialEntry);
       }
-  
+
       for (let i = 0; i < labeledQuestions.length; i++) {
         if (labelColors.hasOwnProperty(labeledQuestions[i].label)) {
           let entry = {
@@ -449,13 +440,12 @@ export default function Submission() {
     }
   }
 
-  
   function setTimeLineData() {
     if (labeledQuestions) {
       let data = [];
       let categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
       let colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00", "#0000FF", "#4B0082"]; // Add colors for each category
-  
+
       for (let i = 0; i < labeledQuestions.length; i++) {
         const categoryIndex = categories.indexOf(labeledQuestions[i]);
         if (categoryIndex !== -1) {
@@ -466,13 +456,13 @@ export default function Submission() {
             fillColor: colors[categoryIndex],
           };
           data.push(timeListObj);
-        } else if (labeledQuestions[i] === 'Uncategorized') {
+        } else if (labeledQuestions[i] === "Uncategorized") {
           // Handle "Uncategorized" entries
           let startTime = new Date(questions[i].start); // Convert the start time to a Date object
           let timeListObj = {
             x: startTime, // Use the Date object as the x value
             y: 0,
-            fillColor: '#808080', // Choose a color for "Uncategorized" entries, e.g., gray
+            fillColor: "#808080", // Choose a color for "Uncategorized" entries, e.g., gray
           };
           data.push(timeListObj);
         }
@@ -715,8 +705,7 @@ export default function Submission() {
       }
       return prevSentence;
     });
-    console.log("sentences: ", sentences);
-    console.log("newSentences: ", newSentences);
+
     setSentences(newSentences);
   }
 
@@ -792,8 +781,8 @@ export default function Submission() {
     };
   }, []);
 
-  function reloadPage(){
-    navigate("/home")
+  function reloadPage() {
+    navigate("/home");
     window.location.reload();
   }
 
@@ -802,13 +791,13 @@ export default function Submission() {
       <div>
         {!userReportToLoad ? (
           <div>
-              <label className="form-label" htmlFor="customFile">
+            <label className="form-label" htmlFor="customFile">
               <h4>Please upload an audio or video recording for transcription</h4>
               <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
             </label>
             <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
-         </div>
-        ): null}
+          </div>
+        ) : null}
         {isAudio ? (
           <div>
             <p>Click "Submit" to begin file analysis</p>
@@ -1048,13 +1037,11 @@ export default function Submission() {
           </div>
 
           <div>
-            {successfullUpload ? (
-              <p>File Save Success</p>
-            ): null}
+            {successfullUpload ? <p>File Save Success</p> : null}
             <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
               Download PDF
             </button>
-            <button onClick={() => saveUserObject()} className='btn btn-primary'>
+            <button onClick={() => saveUserObject()} className="btn btn-primary">
               SAVE REPORT
             </button>
           </div>
