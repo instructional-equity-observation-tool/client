@@ -101,7 +101,7 @@ export default function Submission() {
     const s3 = new AWS.S3();
     if (userReportToLoad) {
       var data = {
-        Bucket: "user-analysis-objs183943-staging",
+        Bucket: "c2ai-storage-e5d3ddbc163336-staging",
         Key: userReportLocation,
         Body: JSON.stringify(sentences),
         ContentEncoding: "base64",
@@ -119,7 +119,7 @@ export default function Submission() {
       const folderName = user.username;
       const location = folderName + "/" + reportName;
       var data = {
-        Bucket: "user-analysis-objs183943-staging",
+        Bucket: "c2ai-storage-e5d3ddbc163336-staging",
         Key: location,
         Body: JSON.stringify(sentences),
         ContentEncoding: "base64",
