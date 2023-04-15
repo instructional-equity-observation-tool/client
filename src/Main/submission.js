@@ -10,22 +10,19 @@ import { uploadFile, transcribeFile } from "../utils/assemblyAPI";
 import "./MainPage.css";
 import "./transcript.scss";
 
-import ProgressBar from "../progress";
-import { Modal } from "bootstrap";
 import Dropdown from "react-bootstrap/Dropdown";
+import Spinner from "react-bootstrap/Spinner";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Chart from "react-apexcharts";
 import { Auth } from "aws-amplify";
 import AWS from "aws-sdk";
 import { Buffer } from "buffer";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function Submission() {
-  const [completed, setCompleted] = useState(0);
   const [transcript, setTranscript] = useState();
   const [sentences, setSentences] = useState();
-  console.log("sentences: ", sentences);
 
   const [times, setTimes] = useState();
   const [speakers, setSpeakers] = useState();
@@ -38,12 +35,15 @@ export default function Submission() {
   const [isVideo, setIsVideo] = useState(false);
   const [isNeither, setIsNeither] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   const [selectedFile, setSelectedFile] = useState("");
   const [reportName, setReportName] = useState("");
   const [fileContent, setFileContent] = useState();
   const [show, setShow] = useState(false);
   const [isRelabelingSpeaker, setIsRelabelingSpeaker] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [successfullUpload, setSuccessfullUpload] = useState(false);
+  let navigate = useNavigate();
 
   const location = useLocation();
   const userReportToLoad = location.state?.data;
@@ -51,14 +51,15 @@ export default function Submission() {
 
   useEffect(() => {
     checkLoadReport();
+  }, []);
+
+  useEffect(() => {
     if (sentences) {
       createTranscript();
       findQuestions();
       findSpeakers();
       toResponse();
       printTimes();
-      setCompleted(0);
-      // hideModal();
     }
   }, [sentences]);
 
@@ -77,15 +78,11 @@ export default function Submission() {
     });
     setSpeakers(speakersSet);
   }
+
   function checkLoadReport() {
     if (userReportToLoad) {
-      document.getElementById("submission-main").click();
+      setSentences(userReportToLoad);
     }
-  }
-
-  function handleInputChange(event) {
-    event.persist();
-    setReportName(event.target.value);
   }
 
   async function saveUserObject() {
@@ -112,6 +109,7 @@ export default function Submission() {
       s3.putObject(data, function (err, data) {
         if (err) {
         } else {
+          setSuccessfullUpload(true);
         }
       });
     } else {
@@ -129,6 +127,7 @@ export default function Submission() {
       s3.putObject(data, function (err, data) {
         if (err) {
         } else {
+          setSuccessfullUpload(true);
         }
       });
     }
@@ -161,20 +160,8 @@ export default function Submission() {
     if (userReportToLoad) {
       setSentences(userReportToLoad);
     } else {
-      // showModal();
-      // document.getElementById('name-report').readonly = true;
-      // let interval = setInterval(() => {
-      //   it += 1;
-      //   setCompleted(it);
-      //   if (it === 95) {
-      //     clearInterval(interval);
-      //     it = 0;
-      //   }
-      // }, 2000);
-
       const audioUrl = await uploadFile(fileContent);
       const transcriptionResult = await transcribeFile(audioUrl);
-
       setSentences(transcriptionResult);
       setIsAnalyzing(false);
     }
@@ -203,25 +190,6 @@ export default function Submission() {
     }
   };
 
-  let it = 0;
-
-  const modalRef = useRef();
-
-  const showModal = () => {
-    const modalEle = modalRef.current;
-    const bsModal = new Modal(modalEle, {
-      backdrop: "static",
-      keyboard: false,
-    });
-    bsModal.show();
-  };
-
-  const hideModal = () => {
-    const modalEle = modalRef.current;
-    const bsModal = Modal.getInstance(modalEle);
-    bsModal.hide();
-  };
-
   function findQuestions() {
     let qs = [];
     if (sentences) {
@@ -241,6 +209,7 @@ export default function Submission() {
             sentences[i].isQuestion = true;
             sentences[i].label = "";
           } else {
+            sentences[i].isQuestion = false;
             sentences[i].label = "non-question";
           }
         }
@@ -281,9 +250,9 @@ export default function Submission() {
         sStamps.push(convertMsToTime(questions[i].start));
         speaks.push(questions[i].speaker);
       }
-      it = 0;
       setQuestioningTime(convertMsToTime(qDur));
       setTimes(sStamps);
+
       setSpeakers(speaks);
       return sStamps;
     }
@@ -327,7 +296,7 @@ export default function Submission() {
           return sentence.label;
         }
       });
-
+      //
       setLabeledQuestions(labeled);
     } else {
       const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
@@ -361,7 +330,7 @@ export default function Submission() {
           }
         }
       }
-
+      //
       setLabeledQuestions(quests);
     }
   }
@@ -424,25 +393,45 @@ export default function Submission() {
     return this;
   }
 
+
+  function getCategoryColor(category) {
+    switch (category) {
+      case "Remember":
+        return "#F94144";
+      case "Understand":
+        return "#F3722C";
+      case "Apply":
+        return "#F8961E";
+      case "Analyze":
+        return "#F9C74F";
+      case "Evaluate":
+        return "#90BE6D";
+      case "Create":
+        return "#43AA8B";
+      default:
+        return "#577590";
+    }
+  }
+
   function setTimeChartData() {
     if (labeledQuestions) {
       let data = [];
-  
+
       // Create a dictionary mapping labels to colors
       const labelColors = {
-        "Knowledge": "#0000FF",
-        "Understand": "#D42AC8",
-        "Apply": "#009400",
-        "Analyze": "#FF7300",
-        "Evaluate": "#FFC400",
-        "Create": "#7C7670",
+        Knowledge: "#0000FF",
+        Understand: "#D42AC8",
+        Apply: "#009400",
+        Analyze: "#FF7300",
+        Evaluate: "#FFC400",
+        Create: "#7C7670",
       };
 
       // Calculate the total time range of the timeline
       const minTime = Math.min(...questions.map((q) => q.start / 1000));
       const maxTime = Math.max(...questions.map((q) => q.start / 1000));
       const totalTimeRange = maxTime - minTime;
-      //console.log(totalTimeRange);
+      //
 
       // Define the percentage of the total time range to use as the constant width for the entries
       const entryWidthPercentage = 0.04; // Adjust this value as needed
@@ -456,7 +445,7 @@ export default function Submission() {
         };
         data.push(initialEntry);
       }
-  
+
       for (let i = 0; i < labeledQuestions.length; i++) {
         if (labelColors.hasOwnProperty(labeledQuestions[i].label)) {
           let entry = {
@@ -471,43 +460,45 @@ export default function Submission() {
     }
   }
 
-  /*
-function setTimeLineData() {
-  const bloomLevels = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
-  const bloomIndices = bloomLevels.reduce((acc, level, index) => {
-    acc[level] = index;
-    return acc;
-  }, {});
+  function setTimeLineData() {
+    if (labeledQuestions) {
+      let data = [];
 
-  if (labeledQuestions) {
-    let data = [];
-    for (let i = 0; i < labeledQuestions.length; i++) {
-      let endTime;
-      if (i < labeledQuestions.length - 1) {
-        endTime = questions[i + 1].start / 1000;
-      } else {
-        endTime = questions[i].end / 1000;
-      }
+      console.log("labeledQuestions:")
+      console.log(labeledQuestions)
+      console.log("sentences:")
+      console.log(sentences)
+      console.log("questions:")
+      console.log(questions)
 
-      const label = labeledQuestions[i].label;
-      if (bloomIndices.hasOwnProperty(label)) {
-        data.push({
-          x: label,
-          y: [questions[i].start / 1000, endTime],
-          index: bloomIndices[label],
-          fillColor: getLabelColor(label),
-        });
+      let questionList = sentences.filter((item) => item.isQuestion);
+      console.log("questionList");
+      console.log(questionList);
+
+      for (let i = 0; i < labeledQuestions.length; i++) {
+        let endTime;
+        if (i < labeledQuestions.length - 1) {
+          endTime = questions[i + 1].start / 1000;
+        } else {
+          endTime = questions[i].end / 1000;
+        }
+        let categoryColor = getCategoryColor(labeledQuestions[i].category);
+        let timeListObj = {
+          x: "Questions",
+          y : [questions[i].start / 1000, endTime],
+          fillColor: categoryColor,
+        };
+        data.push(timeListObj);
       }
+      return data;
     }
-    return data;
   }
-}*/
 
   const timeChartProps = {
     series: [
       {
         data: setTimeChartData(),
-      }
+      },
     ],
     options: {
       chart: {
@@ -542,21 +533,19 @@ function setTimeLineData() {
     },
   };
 
-  /*
   const timeLineProps = {
     series: [
       {
-        name: 'Timeline',
         data: setTimeLineData(),
+        name: 'Questions',
       },
     ],
     options: {
       chart: {
         type: "rangeBar",
-        height: 350,
       },
       title: {
-        text: "Teacher Question Timeline",
+        text: "Collapsed Timeline",
         align: "left",
         style: {
           fontSize: "30px",
@@ -565,31 +554,66 @@ function setTimeLineData() {
           color: "#263238",
         },
       },
-      xaxis: {
-        type: "datetime", // Change the x-axis type to "datetime"
-      },
-      yaxis: {
-        min: -1,
-        max: 1,
-        labels: {
-          show: false,
+      plotOptions: {
+        bar: {
+          horizontal: true,
+          distributed: true,
+          dataLabels: {
+            hideOverflowingLabels: false,
+          },
         },
+      },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shade: 'light',
+          type: 'horizontal',
+          shadeIntensity: 0.25,
+          gradientToColors: undefined,
+          inverseColors: true,
+          opacityFrom: 1,
+          opacityTo: 1,
+          stops: [50, 0, 100],
+          colorStops: []
+        },
+        colors: undefined
       },
       dataLabels: {
         enabled: false,
       },
-      grid: {
-        yaxis: {
-          lines: {
-            show: false,
-          },
+      tooltip: {
+        enabled: true,
+        custom: function({ series, seriesIndex, dataPointIndex, w }) {
+          const question = questions[dataPointIndex];
+          return (
+            '<div class="arrow_box">' +
+            '<span><strong>Question: </strong>' + question.text + '</span>' +
+            '</div>'
+          );
         },
       },
+      xaxis: {
+        type: "numeric",
+        distributed: true,
+      },
+      yaxis: {
+        labels: {
+          style: {
+            fontSize: "20px",
+          },
+        },
+        categories: ["Questions"],
+      },
     },
-  };*/
+  };
 
   const barChartProps = {
     options: {
+      //plotOptions: {
+      //bar: {
+      //distributed: true
+      //}
+      //},
       title: {
         text: "Question Category Distribution",
         align: "left",
@@ -778,8 +802,7 @@ function setTimeLineData() {
       }
       return prevSentence;
     });
-    console.log("sentences: ", sentences);
-    console.log("newSentences: ", newSentences);
+
     setSentences(newSentences);
   }
 
@@ -855,92 +878,78 @@ function setTimeLineData() {
     };
   }, []);
 
+  function reloadPage() {
+    navigate("/home");
+    window.location.reload();
+  }
+
   return (
     <div>
       <div>
-        <label className="form-label" htmlFor="customFile">
-          <h4>Please upload an audio or video recording for transcription</h4>
-          <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
-        </label>
-        <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
+        {!userReportToLoad ? (
+          <div>
+            <label className="form-label" htmlFor="customFile">
+              <h4>Please upload an audio or video recording for transcription</h4>
+              <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
+            </label>
+            <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
+          </div>
+        ) : null}
         {isAudio ? (
           <div>
-            <p>FILE SUCCESSFULLY UPLOADED</p>
+            <p>Click "Submit" to begin file analysis</p>
             <audio controls id="audio-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </audio>
-            <div>
-              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
-            </div>
+            {isAnalyzing ? (
+              <div>
+                <Spinner className="spinner" animation="border" role="status"></Spinner>
+                <p>Analysis in progress...</p>
+              </div>
+            ) : null}
           </div>
         ) : (
           <p></p>
         )}
         {isVideo ? (
           <div>
-            <p>FILE SUCCESSFULLY UPLOADED</p>
+            <p>Click "Submit" to begin file analysis</p>
             <video controls id="video-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </video>
-            <div>
-              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
-            </div>
+            {isAnalyzing ? (
+              <div>
+                <Spinner className="spinner" animation="border" role="status"></Spinner>
+                <p>Analysis in progress...</p>
+              </div>
+            ) : null}
           </div>
         ) : (
           <p></p>
         )}
         {isNeither ? (
           <div>
-            <p>FILE SUCCESSFULLY UPLOADED</p>
+            <p>Click "Submit" to begin file analysis</p>
             <p>Please click SUBMIT to begin analysis</p>
-            {isAnalyzing ? <p>ANALYZING PLEASE WAIT</p> : null}
-            <div>
-              <input placeholder="TEST INPUT" onChange={handleInputChange} id="name-report"></input>
-            </div>
+            {isAnalyzing ? (
+              <div>
+                <Spinner className="spinner" animation="border" role="status"></Spinner>
+                <p>Analysis in progress...</p>
+              </div>
+            ) : null}
           </div>
         ) : (
           <p></p>
         )}
-        <button
-          type="button"
-          className="btn btn-primary"
-          data-bs-toggle="modal"
-          data-bs-target="#progressModal"
-          id="submission-main"
-          onClick={() => handleSubmission({ selectedFile })}
-        >
-          Submit
-        </button>
-        <div className="addEmployee">
-          <div className="modal fade" ref={modalRef} tabIndex="-1" style={{ marginTop: "115px" }}>
-            <div className="modal-dialog">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title" id="staticBackdropLabel">
-                    Analyzing
-                  </h5>
-                </div>
-                <div className="modal-body">
-                  <div>
-                    <ProgressBar bgcolor={"#6a1b9a"} completed={completed} />
-                  </div>
-                  <button
-                    onClick={() => window.location.reload(false)}
-                    style={{
-                      backgroundColor: "dodgerblue",
-                      color: "white",
-                      padding: "5px 15px",
-                      borderRadius: "5px",
-                      border: "0",
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {!isAnalyzing && !sentences ? (
+          <button type="button" className="btn btn-primary" id="submission-main" onClick={() => handleSubmission({ selectedFile })}>
+            Submit
+          </button>
+        ) : isAnalyzing ? (
+          <button type="button" className="btn btn-primary" id="submission-main" onClick={() => window.location.reload()}>
+            Cancel
+          </button>
+        ) : null}
       </div>
       {sentences && (
         <div>
@@ -986,7 +995,7 @@ function setTimeLineData() {
                             <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
                             <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
                             <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
-                            <Dropdown.Item onClick={() => handleAddNewSentence(sentence)}>Insert sentence after</Dropdown.Item>
+                            <Dropdown.Item>Insert sentence after</Dropdown.Item>
                           </div>
                         ) : (
                           <div>
@@ -1032,7 +1041,7 @@ function setTimeLineData() {
                       {questions &&
                         times &&
                         questions.map((question, index) => (
-                          <tr className="question">
+                          <tr key={index} className="question">
                             <td>{times[index]}</td>
                             <td id="question-table-question">"{question.text}"</td>
                             <td>{speakers[index]}</td>
@@ -1044,7 +1053,7 @@ function setTimeLineData() {
                                 : respTime[question.end] + " seconds"}
                             </td>
                             <td>{labeledQuestions[index].label}</td>
-                            <div className="question-options">
+                            <td className="question-options">
                               <Dropdown>
                                 <Dropdown.Toggle variant="sm" id="dropdown-basic">
                                   Select Type
@@ -1098,7 +1107,7 @@ function setTimeLineData() {
                               <button type="button" class="btn btn-danger" onClick={() => removeQuestion(index)}>
                                 Remove
                               </button>
-                            </div>
+                            </td>
                           </tr>
                         ))}
                     </tbody>
@@ -1123,14 +1132,14 @@ function setTimeLineData() {
               </tr>
               <tr>
                 <td>
-                  {//<Chart options={timeLineProps.options} series={timeLineProps.series} type="rangeBar" height={200} width={1300} />
-                  }
+                  <Chart options={timeLineProps.options} series={timeLineProps.series} type="rangeBar" height={200} width={1300} />
                 </td>
               </tr>
             </div>
           </div>
 
           <div>
+            {successfullUpload ? <p>File Save Success</p> : null}
             <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
               Download PDF
             </button>
