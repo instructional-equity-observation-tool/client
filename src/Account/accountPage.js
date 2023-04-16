@@ -102,7 +102,7 @@ export default function Account(){
           const user = await Auth.currentAuthenticatedUser();
           const s3 = new AWS.S3();
           let params = {
-            Bucket: 'user-analysis-objs183943-staging',
+            Bucket: 'c2ai-storage-e5d3ddbc163336-staging',
             Delimiter: '',
             Prefix: user.username + "/"
           }
@@ -124,7 +124,7 @@ export default function Account(){
         setLocation(key)
 
         let params = {
-            Bucket: 'user-analysis-objs183943-staging',
+            Bucket: 'c2ai-storage-e5d3ddbc163336-staging',
             Key: key,
             ResponseContentType: 'application/json'
         }
@@ -141,6 +141,26 @@ export default function Account(){
             }
         })
         setReportLoaded(true);
+    }
+
+    async function deleteUserReport(key, event){
+        // event.preventDefault();
+        const s3 = new AWS.S3();
+        const user = await Auth.currentAuthenticatedUser();
+
+        let params = {
+            Bucket: 'c2ai-storage-e5d3ddbc163336-staging',
+            Key: key,
+        }
+
+       s3.deleteObject(params, function (err, data){
+            if(err){
+                console.log(err)
+            }else{
+                window.location.reload();
+                console.log(data)
+            }
+        })
     }
 
     return(
@@ -167,7 +187,8 @@ export default function Account(){
                             {listFiles && 
                                 listFiles.map((name, index) => (
                                     <li className='list-group-item' key={index}>
-                                        <button className="btn btn-primary" onClick={(e) => loadUserReport(name.Key, e)}>{name.Key.substring(name.Key.indexOf("/") + 1)}</button>   
+                                        <button className="btn btn-primary" onClick={(e) => loadUserReport(name.Key, e)}>{name.Key.substring(name.Key.indexOf("/") + 1)}</button> 
+                                        <button className="btn btn-danger" onClick={(e) => deleteUserReport(name.Key, e)}>Delete</button>  
                                     </li>         
                             ))}
                             {reportLoaded ? (

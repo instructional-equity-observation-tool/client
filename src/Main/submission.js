@@ -65,7 +65,6 @@ export default function Submission() {
 
   useEffect(() => {
     if (questions) {
-      toResponse();
       printTimes();
     }
   }, [questions]);
@@ -83,6 +82,11 @@ export default function Submission() {
     if (userReportToLoad) {
       setSentences(userReportToLoad);
     }
+  }
+
+  function handleInputChange(event) {
+    event.persist();
+    setReportName(event.target.value);
   }
 
   async function saveUserObject() {
@@ -108,7 +112,9 @@ export default function Submission() {
 
       s3.putObject(data, function (err, data) {
         if (err) {
+          console.log("Upload error");
         } else {
+          console.log("Successful Upload");
           setSuccessfullUpload(true);
         }
       });
@@ -126,7 +132,9 @@ export default function Submission() {
       };
       s3.putObject(data, function (err, data) {
         if (err) {
+          console.log("Upload error");
         } else {
+          console.log("Successful Upload");
           setSuccessfullUpload(true);
         }
       });
@@ -245,8 +253,9 @@ export default function Submission() {
   }
 
   function toResponse() {
-    if (questions) {
-      const isQuestion = (sentence) => questions.some((question) => question === sentence);
+    if (sentences) {
+      let filteredQuestions = sentences.filter(sentence => sentence.isQuestion);
+      const isQuestion = (sentence) => filteredQuestions.some((question) => question === sentence);
 
       let stamps = sentences.reduce((acc, current, index, arr) => {
         const isCurrentQuestion = isQuestion(current);
@@ -298,7 +307,7 @@ export default function Submission() {
     // 👇️ comment (or remove) the line below
     // commenting next line gets you `24:00:00` instead of `00:00:00`
     // or `36:15:31` instead of `12:15:31`, etc.
-    hours = hours % 24;
+    //hours = hours % 24;
 
     return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(seconds)}`;
   }
@@ -456,6 +465,8 @@ export default function Submission() {
       const maxTime = Math.max(...sentences.map((s) => s.start / 1000));
       const totalTimeRange = maxTime - minTime;
 
+      const earliestStartTime = Math.min(...sentences.map((s) => s.start));
+
       // Define the percentage of the total time range to use as the constant width for the entries
       const entryWidthPercentage = 0.04; // Adjust this value as needed
       const constantWidth = totalTimeRange * entryWidthPercentage;
@@ -463,7 +474,7 @@ export default function Submission() {
       for (let label in labelColors) {
         let initialEntry = {
           x: label,
-          y: [0, 0],
+          y: [0,0],
           fillColor: labelColors[label],
         };
         timeData.push(initialEntry);
@@ -473,12 +484,17 @@ export default function Submission() {
         if (labelColors.hasOwnProperty(questionList[i].label)) {
           let entry = {
             x: questionList[i].label,
-            y: [questionList[i].start / 1000, questionList[i].start / 1000 + constantWidth],
+            y: [
+              questionList[i].start,
+              questionList[i].start + constantWidth * 1000,
+            ],
             fillColor: labelColors[questionList[i].label],
           };
           timeData.push(entry);
         }
       }
+      console.log("timeData:");
+      console.log(timeData);
       return timeData;
     }
   }
@@ -561,6 +577,11 @@ export default function Submission() {
       },
       xaxis: {
         type: "numeric",
+        labels: {
+          formatter: function (val) {
+            return convertMsToTime(val);
+          },
+        },
       },
       yaxis: {
         labels: {
@@ -620,7 +641,11 @@ export default function Submission() {
       },*/
       xaxis: {
         type: "numeric",
-        distributed: true,
+        labels: {
+          formatter: function (val) {
+            return convertMsToTime(val*1000);
+          },
+        },
       },
       yaxis: {
         labels: {
@@ -757,27 +782,15 @@ export default function Submission() {
     if (sentences) {
       let doc = new jsPDF("p", "pt", "letter");
 
-      let sentenceArray = new Array();
-      for (let i = 0; i < sentences.length; i++) {
-        sentenceArray[i] = new Array(sentences[i].speaker, sentences[i].text, convertMsToTime(sentences[i].end - sentences[i].start));
-      }
-
+      let questionList = sentences.filter(sentence => sentence.isQuestion);
       let questionArray = new Array();
-      for (let i = 0; i < questions.length; i++) {
-        questionArray[i] = new Array(questions[i].text, sentences[i].label);
+      for (let i = 0; i < questionList.length; i++) {
+        questionArray[i] = new Array(questionList[i].text, questionList[i].label);
       }
 
       let y = 10;
       doc.setLineWidth(2);
-      doc.text(200, (y = y + 30), "Your File Analysis Report");
-      doc.autoTable({
-        head: [["Speaker", "Sentence", "Duration"]],
-        body: sentenceArray,
-        startY: 70,
-        theme: "grid",
-      });
-
-      doc.addPage();
+      doc.text(200, (y = y + 20), "Your File Analysis Report");
       doc.autoTable({
         head: [["Question", "Category"]],
         body: questionArray,
@@ -917,6 +930,7 @@ export default function Submission() {
         ) : null}
         {isAudio ? (
           <div>
+            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
             <p>Click "Submit" to begin file analysis</p>
             <audio controls id="audio-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
@@ -937,6 +951,7 @@ export default function Submission() {
             <video controls id="video-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </video>
+            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
             {isAnalyzing ? (
               <div>
                 <Spinner className="spinner" animation="border" role="status"></Spinner>
@@ -951,6 +966,7 @@ export default function Submission() {
           <div>
             <p>Click "Submit" to begin file analysis</p>
             <p>Please click SUBMIT to begin analysis</p>
+            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
             {isAnalyzing ? (
               <div>
                 <Spinner className="spinner" animation="border" role="status"></Spinner>

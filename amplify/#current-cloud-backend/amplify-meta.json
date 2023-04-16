@@ -53,7 +53,7 @@
         "IdentityPoolName": "testAuthIdentityPool__staging",
         "UserPoolName": "C2AI"
       },
-      "lastPushTimeStamp": "2023-04-10T17:04:31.573Z",
+      "lastPushTimeStamp": "2023-04-16T21:29:11.067Z",
       "providerMetadata": {
         "s3TemplateURL": "https://s3.amazonaws.com/amplify-amplify8dcd72a7ab164-staging-163336-deployment/amplify-cfn-templates/auth/C2AI-cloudformation-template.json",
         "logicalId": "authC2AI"
@@ -61,20 +61,16 @@
     }
   },
   "storage": {
-    "s3c2aistoragee5d3ddbc": {
+    "c2ai97dbbd21": {
       "service": "S3",
+      "serviceType": "imported",
       "providerPlugin": "awscloudformation",
       "dependsOn": [],
-      "lastPushTimeStamp": "2023-04-10T17:04:31.616Z",
-      "providerMetadata": {
-        "s3TemplateURL": "https://s3.amazonaws.com/amplify-amplify8dcd72a7ab164-staging-163336-deployment/amplify-cfn-templates/storage/cloudformation-template.json",
-        "logicalId": "storages3c2aistoragee5d3ddbc"
-      },
       "output": {
         "BucketName": "c2ai-storage-e5d3ddbc163336-staging",
         "Region": "us-east-2"
       },
-      "lastPushDirHash": "RwGPOHqpKRpgEBpZs217BLZ/UC8="
+      "lastPushTimeStamp": "2023-04-16T21:29:11.910Z"
     }
   }
 }
