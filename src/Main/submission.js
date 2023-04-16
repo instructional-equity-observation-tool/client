@@ -434,10 +434,9 @@ export default function Submission() {
   }
 
   function setTimeChartData() {
-    if (labeledQuestions) {
+    if (sentences) {
       let timeData = [];
 
-      // Create a dictionary mapping labels to colors
       const labelColors = {
         Knowledge: "#0000FF",
         Understand: "#D42AC8",
@@ -447,11 +446,14 @@ export default function Submission() {
         Create: "#7C7670",
       };
 
+      let questionList = sentences.filter(
+        (item) => item.isQuestion && Object.keys(labelColors).includes(item.label)
+      );
+
       // Calculate the total time range of the timeline
-      const minTime = Math.min(...questions.map((q) => q.start / 1000));
-      const maxTime = Math.max(...questions.map((q) => q.start / 1000));
+      const minTime = Math.min(...sentences.map((s) => s.start / 1000));
+      const maxTime = Math.max(...sentences.map((s) => s.start / 1000));
       const totalTimeRange = maxTime - minTime;
-      //
 
       // Define the percentage of the total time range to use as the constant width for the entries
       const entryWidthPercentage = 0.04; // Adjust this value as needed
@@ -466,12 +468,12 @@ export default function Submission() {
         timeData.push(initialEntry);
       }
 
-      for (let i = 0; i < labeledQuestions.length; i++) {
-        if (labelColors.hasOwnProperty(labeledQuestions[i].label)) {
+      for (let i = 0; i < questionList.length; i++) {
+        if (labelColors.hasOwnProperty(questionList[i].label)) {
           let entry = {
-            x: labeledQuestions[i].label,
-            y: [questions[i].start / 1000, questions[i].start / 1000 + constantWidth],
-            fillColor: labelColors[labeledQuestions[i].label],
+            x: questionList[i].label,
+            y: [questionList[i].start / 1000, questionList[i].start / 1000 + constantWidth],
+            fillColor: labelColors[questionList[i].label],
           };
           timeData.push(entry);
         }
@@ -481,7 +483,7 @@ export default function Submission() {
   }
 
   function setTimeLineData() {
-    if (labeledQuestions) {
+    if (sentences) {
       let timeData = [];
       //console.log("sentences:")
       //console.log(sentences)
@@ -493,14 +495,13 @@ export default function Submission() {
         Evaluate: "#FFC400",
         Create: "#7C7670",
       };
-      const categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
       let questionList = sentences.filter(
         (item) => item.isQuestion && Object.keys(labelColors).includes(item.label)
       );
       //console.log("questionList");
       //console.log(questionList);
-      const minTime = Math.min(...questions.map((q) => q.start / 1000));
-      const maxTime = Math.max(...questions.map((q) => q.start / 1000));
+      const minTime = Math.min(...sentences.map((s) => s.start / 1000));
+      const maxTime = Math.max(...sentences.map((s) => s.start / 1000));
       const totalTimeRange = maxTime - minTime;
       const entryWidthPercentage = 0.04; 
       const constantWidth = totalTimeRange * entryWidthPercentage;
