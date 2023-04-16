@@ -88,3 +88,18 @@
 #name-report{
   margin-top: 10px;
 }
+
+
+
+.uncategorized-question {
+  color: red;
+}
+
+#bottom-button{
+  margin-bottom: 75px;
+}
+
+#bottom-button2{
+  margin-bottom: 75px;
+  margin-left: 10px;
+}
