@@ -378,26 +378,27 @@ export default function Submission() {
 
 
   function removeQuestion(idx) {
-    let newSentences = [...sentences];
-    let filteredQuestions = newSentences.filter(sentence => sentence.isQuestion);
-    let questionIndex = newSentences.indexOf(filteredQuestions[idx]);
+    let filteredQuestions = sentences.filter(sentence => sentence.isQuestion);
+    let questionIndex = sentences.indexOf(filteredQuestions[idx]);
     if (questionIndex !== -1) {
-      newSentences[questionIndex].isQuestion = false;
+      sentences[questionIndex].isQuestion = false;
     }
     labeledQuestions.splice(idx, 1);
     times.splice(idx, 1);
-    setQuestions(newSentences.filter(sentence => sentence.isQuestion));
+    setQuestions(sentences.filter(sentence => sentence.isQuestion));
   }
 
   function selectLabel(index, label) {
     let newLabeledQuestions = [...labeledQuestions];
+    let questionList = sentences.filter(sentence => sentence.isQuestion);
+    questionList[index].label = label;
     newLabeledQuestions[index].label = label;
     setLabeledQuestions(newLabeledQuestions);
 
-    for (let j = 0; j < labeledQuestions.length; j++) {
+    for (let j = 0; j < questionList.length; j++) {
       for (let k = 0; k < sentences.length; k++) {
-        if (labeledQuestions[j].start == sentences[k].start) {
-          sentences[k].label = labeledQuestions[j].label;
+        if (questionList[j].start == sentences[k].start) {
+          sentences[k].label = questionList[j].label;
         }
       }
     }
@@ -405,9 +406,9 @@ export default function Submission() {
 
   function getAmountOfLabel(label) {
     let amount = 0;
-    if (labeledQuestions) {
-      for (let i = 0; i < labeledQuestions.length; i++) {
-        if (labeledQuestions[i].label == label) {
+    if (sentences) {
+      for (let i = 0; i < sentences.length; i++) {
+        if (sentences[i].label == label) {
           amount++;
         }
       }
@@ -763,7 +764,7 @@ export default function Submission() {
 
       let questionArray = new Array();
       for (let i = 0; i < questions.length; i++) {
-        questionArray[i] = new Array(questions[i].text, labeledQuestions[i]);
+        questionArray[i] = new Array(questions[i].text, sentences[i].label);
       }
 
       let y = 10;
