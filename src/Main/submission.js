@@ -188,16 +188,17 @@ export default function Submission() {
         return prevSentence;
       });
       setSentences(newSentences);
-    }*/
-    
+    }
+    */
     const newSentences = sentences.map((prevSentence) => {
       if (prevSentence.start === sentence.start) {
-        return { ...prevSentence, isQuestion: true };
+        return { ...prevSentence, label: "Uncategorized", isQuestion: true };
       }
       return prevSentence;
     });
     setSentences(newSentences);
-    
+
+
   };
 
   function findQuestions() {
@@ -214,19 +215,17 @@ export default function Submission() {
         return qs;
       } else {
         //added so that not all question marks are identified as questions every time a question is added
-        if(sentences.some((sentence) => sentence.isQuestion)){
+        if (sentences.some((sentence) => sentence.isQuestion)) {
           for (let i = 0; i < sentences.length; i++) {
             if (sentences[i].isQuestion == true) {
               qs.push(sentences[i]);
-              sentences[i].isQuestion = true;
-              sentences[i].label = "";
             } else {
               sentences[i].isQuestion = false;
               sentences[i].label = "non-question";
             }
           }
         }
-        else{
+        else {
           for (let i = 0; i < sentences.length; i++) {
             if (sentences[i].text.includes("?") || sentences[i].isQuestion == true) {
               qs.push(sentences[i]);
@@ -304,7 +303,10 @@ export default function Submission() {
     return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(seconds)}`;
   }
 
+
   function findQuestionsLabels(quests) {
+    //console.log("quests:")
+    //console.log(quests)
     let labeled = [quests.length];
     const categoryMap = {
       Knowledge: knowledgeArray,
@@ -321,23 +323,40 @@ export default function Submission() {
           return sentence.label;
         }
       });
-      //
       setLabeledQuestions(labeled);
     } else {
       const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
-      
+
       const findCategories = (word) =>
         Object.keys(categoryMap)
           .filter((key) => categoryMap[key].includes(word))
           .join(" or ");
 
-      labeled = quests.map((quest) => {
-        const categories = quest.words
-          .map((wordObj) => sanitizeWord(wordObj.text))
-          .map(findCategories)
-          .filter((category) => category.length > 0);
-        return categories.length > 0 ? categories.join(" or ") : "Uncategorized";
-      });
+      if (sentences.some((sentence) => sentence.isQuestion && sentence.label !== "Uncategorized" && sentence.label !== "")) {
+        console.log("MADE IT HERE")
+        labeled = quests.map((quest) => {
+          if (quest.label !== "non-question") {
+            return quest.label;
+          }
+        })
+      }
+      else {
+        labeled = quests.map((quest) => {
+          //if (quest.label !== "non-question") {
+          //return quest.label;
+          //}
+          const words = quest.words.map((wordObj) => sanitizeWord(wordObj.text));
+          for (const word of words) {
+            const category = findCategories(word);
+            if (category) {
+              return category;
+            }
+          }
+          return "Uncategorized";
+        });
+      }
+
+
       // newLabeledObj = sentences.filter(function(sentence){
       //   if(sentence.isQuestion === true){
       //     return sentence
@@ -359,6 +378,8 @@ export default function Submission() {
       setLabeledQuestions(quests);
     }
   }
+
+
 
   function removeQuestion(idx) {
     let newSentences = [...sentences];
@@ -416,35 +437,9 @@ export default function Submission() {
     }
   }
 
-  function timeObj(x, y) {
-    this.x = x;
-    this.y = y;
-    return this;
-  }
-
-
-  function getCategoryColor(category) {
-    switch (category) {
-      case "Remember":
-        return "#F94144";
-      case "Understand":
-        return "#F3722C";
-      case "Apply":
-        return "#F8961E";
-      case "Analyze":
-        return "#F9C74F";
-      case "Evaluate":
-        return "#90BE6D";
-      case "Create":
-        return "#43AA8B";
-      default:
-        return "#577590";
-    }
-  }
-
   function setTimeChartData() {
     if (labeledQuestions) {
-      let data = [];
+      let timeData = [];
 
       // Create a dictionary mapping labels to colors
       const labelColors = {
@@ -472,7 +467,7 @@ export default function Submission() {
           y: [0, 0],
           fillColor: labelColors[label],
         };
-        data.push(initialEntry);
+        timeData.push(initialEntry);
       }
 
       for (let i = 0; i < labeledQuestions.length; i++) {
@@ -482,23 +477,23 @@ export default function Submission() {
             y: [questions[i].start / 1000, questions[i].start / 1000 + constantWidth],
             fillColor: labelColors[labeledQuestions[i].label],
           };
-          data.push(entry);
+          timeData.push(entry);
         }
       }
-      return data;
+      return timeData;
     }
   }
 
   function setTimeLineData() {
     if (sentences) {
-      let data = [];
+      let timeData = [];
 
-      console.log("labeledQuestions:")
-      console.log(labeledQuestions)
+      //console.log("labeledQuestions:")
+      //console.log(labeledQuestions)
       console.log("sentences:")
       console.log(sentences)
-      console.log("questions:")
-      console.log(questions)
+      //console.log("questions:")
+      //console.log(questions)
 
       const labelColors = {
         Knowledge: "#0000FF",
@@ -509,10 +504,39 @@ export default function Submission() {
         Create: "#7C7670",
       };
 
-      let questionList = sentences.filter((item) => item.isQuestion);
+      const categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
+
+      let questionList = sentences.filter(
+        (item) => item.isQuestion && Object.keys(labelColors).includes(item.label)
+      );
       console.log("questionList");
       console.log(questionList);
 
+      let initialEntry = {
+        x: "Questions",
+        y: [0, 0],
+        fillColor: "#0000FF",
+      };
+      timeData.push(initialEntry);
+
+      for (let i = 0; i < questionList.length; i++) {
+        if (labelColors.hasOwnProperty(questionList[i].label)) {
+
+          let endTime;
+          if (i < questionList.length - 1) {
+            endTime = questionList[i + 1].start / 1000;
+          } else {
+            endTime = questionList[i].end / 1000;
+          }
+          let entry = {
+            x: "Questions",
+            y: [questionList[i].start / 1000, endTime],
+            fillColor: labelColors[questionList[i].label],
+          };
+          timeData.push(entry);
+        }
+      }
+      /*
       for (let i = 0; i < questionList.length; i++) {
         let endTime;
         if (i < questionList.length - 1) {
@@ -521,6 +545,7 @@ export default function Submission() {
           endTime = questionList[i].end / 1000;
         }
         console.log("category color: ");
+        console.log("label: " + questionList[i].label)
         console.log(labelColors[questionList[i].label]);
         let timeListObj = {
           x: "Questions",
@@ -528,8 +553,11 @@ export default function Submission() {
           fillColor: labelColors[questionList[i].label],
         };
         data.push(timeListObj);
-      }
-      return data;
+      }*/
+      console.log("timeLineData:")
+      console.log(timeData)
+
+      return timeData;
     }
   }
 
@@ -602,21 +630,6 @@ export default function Submission() {
           },
         },
       },
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shade: 'light',
-          type: 'horizontal',
-          shadeIntensity: 0.25,
-          gradientToColors: undefined,
-          inverseColors: true,
-          opacityFrom: 1,
-          opacityTo: 1,
-          stops: [50, 0, 100],
-          colorStops: []
-        },
-        colors: undefined
-      },
       dataLabels: {
         enabled: false,
       },
@@ -624,8 +637,6 @@ export default function Submission() {
         enabled: true,
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
           let question = sentences.filter(sentence => sentence.isQuestion)[dataPointIndex];
-          //console.log("tooltip:")
-          //console.log(question)
           return (
             '<div class="arrow_box">' +
             '<span><strong>Question: </strong>' + question.text + '</span>' +
@@ -838,7 +849,6 @@ export default function Submission() {
       }
       return prevSentence;
     });
-
     setSentences(newSentences);
   }
 
