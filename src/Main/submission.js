@@ -213,14 +213,29 @@ export default function Submission() {
         findQuestionsLabels(qs);
         return qs;
       } else {
-        for (let i = 0; i < sentences.length; i++) {
-          if (sentences[i].text.includes("?") || sentences[i].isQuestion == true) {
-            qs.push(sentences[i]);
-            sentences[i].isQuestion = true;
-            sentences[i].label = "";
-          } else {
-            sentences[i].isQuestion = false;
-            sentences[i].label = "non-question";
+        //added so that not all question marks are identified as questions every time a question is added
+        if(sentences.some((sentence) => sentence.isQuestion)){
+          for (let i = 0; i < sentences.length; i++) {
+            if (sentences[i].isQuestion == true) {
+              qs.push(sentences[i]);
+              sentences[i].isQuestion = true;
+              sentences[i].label = "";
+            } else {
+              sentences[i].isQuestion = false;
+              sentences[i].label = "non-question";
+            }
+          }
+        }
+        else{
+          for (let i = 0; i < sentences.length; i++) {
+            if (sentences[i].text.includes("?") || sentences[i].isQuestion == true) {
+              qs.push(sentences[i]);
+              sentences[i].isQuestion = true;
+              sentences[i].label = "";
+            } else {
+              sentences[i].isQuestion = false;
+              sentences[i].label = "non-question";
+            }
           }
         }
         setQuestions(qs);
@@ -310,7 +325,7 @@ export default function Submission() {
       setLabeledQuestions(labeled);
     } else {
       const sanitizeWord = (word) => word.replace(/[.,/#!$%^&*;:{}=-_`~()]/g, "").replace(/\s{2,}/g, " ");
-
+      
       const findCategories = (word) =>
         Object.keys(categoryMap)
           .filter((key) => categoryMap[key].includes(word))
@@ -475,7 +490,7 @@ export default function Submission() {
   }
 
   function setTimeLineData() {
-    if (labeledQuestions) {
+    if (sentences) {
       let data = [];
 
       console.log("labeledQuestions:")
@@ -485,22 +500,32 @@ export default function Submission() {
       console.log("questions:")
       console.log(questions)
 
+      const labelColors = {
+        Knowledge: "#0000FF",
+        Understand: "#D42AC8",
+        Apply: "#009400",
+        Analyze: "#FF7300",
+        Evaluate: "#FFC400",
+        Create: "#7C7670",
+      };
+
       let questionList = sentences.filter((item) => item.isQuestion);
       console.log("questionList");
       console.log(questionList);
 
-      for (let i = 0; i < labeledQuestions.length; i++) {
+      for (let i = 0; i < questionList.length; i++) {
         let endTime;
-        if (i < labeledQuestions.length - 1) {
-          endTime = questions[i + 1].start / 1000;
+        if (i < questionList.length - 1) {
+          endTime = questionList[i + 1].start / 1000;
         } else {
-          endTime = questions[i].end / 1000;
+          endTime = questionList[i].end / 1000;
         }
-        let categoryColor = getCategoryColor(labeledQuestions[i].category);
+        console.log("category color: ");
+        console.log(labelColors[questionList[i].label]);
         let timeListObj = {
           x: "Questions",
-          y: [questions[i].start / 1000, endTime],
-          fillColor: categoryColor,
+          y: [questionList[i].start / 1000, endTime],
+          fillColor: labelColors[questionList[i].label],
         };
         data.push(timeListObj);
       }
@@ -598,7 +623,9 @@ export default function Submission() {
       tooltip: {
         enabled: true,
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-          const question = questions[dataPointIndex];
+          let question = sentences.filter(sentence => sentence.isQuestion)[dataPointIndex];
+          //console.log("tooltip:")
+          //console.log(question)
           return (
             '<div class="arrow_box">' +
             '<span><strong>Question: </strong>' + question.text + '</span>' +
@@ -623,11 +650,6 @@ export default function Submission() {
 
   const barChartProps = {
     options: {
-      //plotOptions: {
-      //bar: {
-      //distributed: true
-      //}
-      //},
       title: {
         text: "Question Category Distribution",
         align: "left",
