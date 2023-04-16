@@ -333,7 +333,6 @@ export default function Submission() {
           .join(" or ");
 
       if (sentences.some((sentence) => sentence.isQuestion && sentence.label !== "Uncategorized" && sentence.label !== "")) {
-        console.log("MADE IT HERE")
         labeled = quests.map((quest) => {
           if (quest.label !== "non-question") {
             return quest.label;
@@ -342,9 +341,6 @@ export default function Submission() {
       }
       else {
         labeled = quests.map((quest) => {
-          //if (quest.label !== "non-question") {
-          //return quest.label;
-          //}
           const words = quest.words.map((wordObj) => sanitizeWord(wordObj.text));
           for (const word of words) {
             const category = findCategories(word);
@@ -485,16 +481,10 @@ export default function Submission() {
   }
 
   function setTimeLineData() {
-    if (sentences) {
+    if (labeledQuestions) {
       let timeData = [];
-
-      //console.log("labeledQuestions:")
-      //console.log(labeledQuestions)
-      console.log("sentences:")
-      console.log(sentences)
-      //console.log("questions:")
-      //console.log(questions)
-
+      //console.log("sentences:")
+      //console.log(sentences)
       const labelColors = {
         Knowledge: "#0000FF",
         Understand: "#D42AC8",
@@ -503,30 +493,32 @@ export default function Submission() {
         Evaluate: "#FFC400",
         Create: "#7C7670",
       };
-
       const categories = ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"];
-
       let questionList = sentences.filter(
         (item) => item.isQuestion && Object.keys(labelColors).includes(item.label)
       );
-      console.log("questionList");
-      console.log(questionList);
+      //console.log("questionList");
+      //console.log(questionList);
+      const minTime = Math.min(...questions.map((q) => q.start / 1000));
+      const maxTime = Math.max(...questions.map((q) => q.start / 1000));
+      const totalTimeRange = maxTime - minTime;
+      const entryWidthPercentage = 0.04; 
+      const constantWidth = totalTimeRange * entryWidthPercentage;
 
       let initialEntry = {
         x: "Questions",
-        y: [0, 0],
-        fillColor: "#0000FF",
+        y: [0, maxTime],
+        fillColor: "#FFFFFF",
       };
       timeData.push(initialEntry);
 
       for (let i = 0; i < questionList.length; i++) {
         if (labelColors.hasOwnProperty(questionList[i].label)) {
-
           let endTime;
           if (i < questionList.length - 1) {
-            endTime = questionList[i + 1].start / 1000;
+            endTime = Math.min(questionList[i + 1].start / 1000, questionList[i].start / 1000 + constantWidth);
           } else {
-            endTime = questionList[i].end / 1000;
+            endTime = questionList[i].start / 1000 + constantWidth;
           }
           let entry = {
             x: "Questions",
@@ -536,27 +528,6 @@ export default function Submission() {
           timeData.push(entry);
         }
       }
-      /*
-      for (let i = 0; i < questionList.length; i++) {
-        let endTime;
-        if (i < questionList.length - 1) {
-          endTime = questionList[i + 1].start / 1000;
-        } else {
-          endTime = questionList[i].end / 1000;
-        }
-        console.log("category color: ");
-        console.log("label: " + questionList[i].label)
-        console.log(labelColors[questionList[i].label]);
-        let timeListObj = {
-          x: "Questions",
-          y: [questionList[i].start / 1000, endTime],
-          fillColor: labelColors[questionList[i].label],
-        };
-        data.push(timeListObj);
-      }*/
-      console.log("timeLineData:")
-      console.log(timeData)
-
       return timeData;
     }
   }
@@ -633,6 +604,7 @@ export default function Submission() {
       dataLabels: {
         enabled: false,
       },
+      /*
       tooltip: {
         enabled: true,
         custom: function ({ series, seriesIndex, dataPointIndex, w }) {
@@ -643,7 +615,7 @@ export default function Submission() {
             '</div>'
           );
         },
-      },
+      },*/
       xaxis: {
         type: "numeric",
         distributed: true,
