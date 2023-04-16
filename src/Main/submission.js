@@ -179,6 +179,7 @@ export default function Submission() {
 
   const handleAddQuestion = (sentence, event) => {
     event.stopPropagation();
+    /*
     if (!questions.some((question) => question.start === sentence.start)) {
       const newSentences = sentences.map((prevSentence) => {
         if (prevSentence.start === sentence.start) {
@@ -187,7 +188,16 @@ export default function Submission() {
         return prevSentence;
       });
       setSentences(newSentences);
-    }
+    }*/
+    
+    const newSentences = sentences.map((prevSentence) => {
+      if (prevSentence.start === sentence.start) {
+        return { ...prevSentence, isQuestion: true };
+      }
+      return prevSentence;
+    });
+    setSentences(newSentences);
+    
   };
 
   function findQuestions() {
@@ -336,11 +346,15 @@ export default function Submission() {
   }
 
   function removeQuestion(idx) {
-    let newQuestions = [...questions];
-    newQuestions.splice(idx, 1);
+    let newSentences = [...sentences];
+    let filteredQuestions = newSentences.filter(sentence => sentence.isQuestion);
+    let questionIndex = newSentences.indexOf(filteredQuestions[idx]);
+    if (questionIndex !== -1) {
+      newSentences[questionIndex].isQuestion = false;
+    }
     labeledQuestions.splice(idx, 1);
     times.splice(idx, 1);
-    setQuestions(newQuestions);
+    setQuestions(newSentences.filter(sentence => sentence.isQuestion));
   }
 
   function selectLabel(index, label) {
@@ -485,7 +499,7 @@ export default function Submission() {
         let categoryColor = getCategoryColor(labeledQuestions[i].category);
         let timeListObj = {
           x: "Questions",
-          y : [questions[i].start / 1000, endTime],
+          y: [questions[i].start / 1000, endTime],
           fillColor: categoryColor,
         };
         data.push(timeListObj);
@@ -583,7 +597,7 @@ export default function Submission() {
       },
       tooltip: {
         enabled: true,
-        custom: function({ series, seriesIndex, dataPointIndex, w }) {
+        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
           const question = questions[dataPointIndex];
           return (
             '<div class="arrow_box">' +
@@ -1038,78 +1052,84 @@ export default function Submission() {
                       </tr>
                     </thead>
                     <tbody>
-                      {questions &&
+                      {sentences &&
                         times &&
-                        questions.map((question, index) => (
-                          <tr key={index} className="question">
-                            <td>{times[index]}</td>
-                            <td id="question-table-question">"{question.text}"</td>
-                            <td>{speakers[index]}</td>
-                            <td>
-                              {respTime[question.end] < 1
-                                ? "< 1 second"
-                                : respTime[question.end] === "No Response"
-                                ? "No Response"
-                                : respTime[question.end] + " seconds"}
-                            </td>
-                            <td>{labeledQuestions[index].label}</td>
-                            <td className="question-options">
-                              <Dropdown>
-                                <Dropdown.Toggle variant="sm" id="dropdown-basic">
-                                  Select Type
-                                </Dropdown.Toggle>
+                        sentences
+                          .filter(sentence => sentence.isQuestion)
+                          .map((question, index) => (
+                            <tr key={index} className="question">
+                              <td>{times[index]}</td>
+                              <td id="question-table-question">"{question.text}"</td>
+                              <td>{question.speaker}</td>
+                              <td>
+                                {respTime[question.end] < 1
+                                  ? "< 1 second"
+                                  : respTime[question.end] === "No Response"
+                                    ? "No Response"
+                                    : respTime[question.end] + " seconds"}
+                              </td>
+                              <td>{question.label}</td>
+                              <td className="question-options">
+                                <Dropdown>
+                                  <Dropdown.Toggle variant="sm" id="dropdown-basic">
+                                    Select Type
+                                  </Dropdown.Toggle>
 
-                                <Dropdown.Menu>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Knowledge");
-                                    }}
-                                  >
-                                    Knowledge
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Understand");
-                                    }}
-                                  >
-                                    Understand
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Apply");
-                                    }}
-                                  >
-                                    Apply
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Analyze");
-                                    }}
-                                  >
-                                    Analyze
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Evaluate");
-                                    }}
-                                  >
-                                    Evaluate
-                                  </Dropdown.Item>
-                                  <Dropdown.Item
-                                    onClick={() => {
-                                      selectLabel(index, "Create");
-                                    }}
-                                  >
-                                    Create
-                                  </Dropdown.Item>
-                                </Dropdown.Menu>
-                              </Dropdown>
-                              <button type="button" class="btn btn-danger" onClick={() => removeQuestion(index)}>
-                                Remove
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                                  <Dropdown.Menu>
+                                    <Dropdown.Item
+                                      onClick={() => {
+                                        selectLabel(index, "Knowledge");
+                                      }}
+                                    >
+                                      Knowledge
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() => {
+                                        selectLabel(index, "Understand");
+                                      }}
+                                    >
+                                      Understand
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() => {
+                                        selectLabel(index, "Apply");
+                                      }}
+                                    >
+                                      Apply
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() => {
+                                        selectLabel(index, "Analyze");
+                                      }}
+                                    >
+                                      Analyze
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() => {
+                                        selectLabel(index, "Evaluate");
+                                      }}
+                                    >
+                                      Evaluate
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() => {
+                                        selectLabel(index, "Create");
+                                      }}
+                                    >
+                                      Create
+                                    </Dropdown.Item>
+                                  </Dropdown.Menu>
+                                </Dropdown>
+                                <button
+                                  type="button"
+                                  class="btn btn-danger"
+                                  onClick={() => removeQuestion(index)}
+                                >
+                                  Remove
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
                     </tbody>
                   </table>
                 </div>
