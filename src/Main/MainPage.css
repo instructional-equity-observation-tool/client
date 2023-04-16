@@ -63,10 +63,10 @@
   display: block;
 }
 
-.card-body {
+/* .card-body {
   height: 400px;
   overflow-y: scroll;
-}
+} */
 
 .question-options {
   display: flex;
@@ -78,8 +78,28 @@
   max-width: 350px;
 }
 
+
 .spinner {
   padding: 2rem;
   margin: 2rem;
   color: blueviolet;
+}
+
+#name-report{
+  margin-top: 10px;
+}
+
+
+
+.uncategorized-question {
+  color: red;
+}
+
+#bottom-button{
+  margin-bottom: 75px;
+}
+
+#bottom-button2{
+  margin-bottom: 75px;
+  margin-left: 10px;
 }

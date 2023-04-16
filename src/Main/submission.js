@@ -975,6 +975,7 @@ export default function Submission() {
         <div>
           <div className="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
             <h1>Full Transcript</h1>
+            <h4>Click on a sentence to make adjustments to "Questions" list</h4>
             <div className="lead" style={{ backgroundColor: "white" }}>
               <div>
                 {sentences.map((sentence) => (
@@ -1065,8 +1066,8 @@ export default function Submission() {
                           .map((question, index) => (
                             <tr key={index} className="question">
                               <td>{times[index]}</td>
-                              <td id="question-table-question">"{question.text}"</td>
-                              <td>{question.speaker}</td>
+                              <td id="question-table-question" style={{color: question.label === "Uncategorized" ? "#ff0000": "#000000"}}>"{question.text}"</td>
+                              <td className={`transcript-speaker speaker-${question.speaker}`}>{question.speaker}</td>
                               <td>
                                 {respTime[question.end] < 1
                                   ? "< 1 second"
@@ -1074,7 +1075,7 @@ export default function Submission() {
                                     ? "No Response"
                                     : respTime[question.end] + " seconds"}
                               </td>
-                              <td>{question.label}</td>
+                              <td style={{color: question.label === "Uncategorized" ? "#ff0000": "#000000"}}>{question.label}</td>
                               <td className="question-options">
                                 <Dropdown>
                                   <Dropdown.Toggle variant="sm" id="dropdown-basic">
@@ -1166,10 +1167,10 @@ export default function Submission() {
 
           <div>
             {successfullUpload ? <p>File Save Success</p> : null}
-            <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary">
+            <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary" id="bottom-button">
               Download PDF
             </button>
-            <button onClick={() => saveUserObject()} className="btn btn-primary">
+            <button onClick={() => saveUserObject()} className='btn btn-primary' id="bottom-button2">
               SAVE REPORT
             </button>
           </div>
