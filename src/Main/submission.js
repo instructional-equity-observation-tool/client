@@ -19,7 +19,7 @@ import { Auth } from "aws-amplify";
 import AWS from "aws-sdk";
 import { Buffer } from "buffer";
 import { useLocation, useNavigate } from "react-router-dom";
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas'
 
 export default function Submission() {
   const [transcript, setTranscript] = useState();
@@ -27,7 +27,7 @@ export default function Submission() {
 
   const [times, setTimes] = useState();
   const [speakers, setSpeakers] = useState();
-
+  console.log('speakers: ', speakers);
   const [questions, setQuestions] = useState();
   const [respTime, setRespTime] = useState();
   const [labeledQuestions, setLabeledQuestions] = useState();
@@ -44,6 +44,11 @@ export default function Submission() {
   const [isRelabelingSpeaker, setIsRelabelingSpeaker] = useState(false);
   const [editing, setEditing] = useState(false);
   const [successfullUpload, setSuccessfullUpload] = useState(false);
+  const [badReportName, setBadReportName] = useState(false);
+
+  const[transcriptSpeakers, setTranscriptSpeakers] = useState([]);
+
+  
   let navigate = useNavigate();
 
   const location = useLocation();
@@ -67,6 +72,7 @@ export default function Submission() {
 
   useEffect(() => {
     if (questions) {
+      toResponse();
       printTimes();
       getTimeChartProps();
     }
@@ -115,9 +121,7 @@ export default function Submission() {
 
       s3.putObject(data, function (err, data) {
         if (err) {
-          console.log("Upload error");
         } else {
-          console.log("Successful Upload");
           setSuccessfullUpload(true);
         }
       });
@@ -125,22 +129,25 @@ export default function Submission() {
       const user = await Auth.currentAuthenticatedUser();
       const folderName = user.username;
       const location = folderName + "/" + reportName;
-      var data = {
-        Bucket: "c2ai-storage-e5d3ddbc163336-staging",
-        Key: location,
-        Body: JSON.stringify(sentences),
-        ContentEncoding: "base64",
-        ContentType: "application/json",
-        ACL: "public-read",
-      };
-      s3.putObject(data, function (err, data) {
-        if (err) {
-          console.log("Upload error");
-        } else {
-          console.log("Successful Upload");
-          setSuccessfullUpload(true);
-        }
-      });
+      if(reportName === ""){
+        setBadReportName(true)
+      }else{
+        setBadReportName(false)
+        var data = {
+          Bucket: "c2ai-storage-e5d3ddbc163336-staging",
+          Key: location,
+          Body: JSON.stringify(sentences),
+          ContentEncoding: "base64",
+          ContentType: "application/json",
+          ACL: "public-read",
+        };
+        s3.putObject(data, function (err, data) {
+          if (err) {
+          } else {
+            setSuccessfullUpload(true);
+          }
+        });
+      }
     }
   }
 
@@ -167,15 +174,11 @@ export default function Submission() {
   }
 
   let handleSubmission = async () => {
-    setIsAnalyzing(true);
-    if (userReportToLoad) {
-      setSentences(userReportToLoad);
-    } else {
+      setIsAnalyzing(true);
       const audioUrl = await uploadFile(fileContent);
       const transcriptionResult = await transcribeFile(audioUrl);
       setSentences(transcriptionResult);
       setIsAnalyzing(false);
-    }
   };
 
   function createTranscript() {
@@ -208,6 +211,8 @@ export default function Submission() {
       return prevSentence;
     });
     setSentences(newSentences);
+
+
   };
 
   function findQuestions() {
@@ -254,9 +259,10 @@ export default function Submission() {
   }
 
   function toResponse() {
-    if (sentences) {
-      let filteredQuestions = sentences.filter(sentence => sentence.isQuestion);
-      const isQuestion = (sentence) => filteredQuestions.some((question) => question === sentence);
+    if (questions) {
+      // const isQuestion = (sentence) => sentences.some((question) => question.isQuestion === sentence.isQuestion);
+      const isQuestion = (sentence) => questions.some((question) => question.text === sentence.text);
+      // console.log(isQuestion)
 
       let stamps = sentences.reduce((acc, current, index, arr) => {
         const isCurrentQuestion = isQuestion(current);
@@ -286,7 +292,6 @@ export default function Submission() {
       }
       setQuestioningTime(convertMsToTime(qDur));
       setTimes(sStamps);
-
       setSpeakers(speaks);
       return sStamps;
     }
@@ -308,7 +313,7 @@ export default function Submission() {
     // 👇️ comment (or remove) the line below
     // commenting next line gets you `24:00:00` instead of `00:00:00`
     // or `36:15:31` instead of `12:15:31`, etc.
-    //hours = hours % 24;
+    hours = hours % 24;
 
     return `${padTo2Digits(hours)}:${padTo2Digits(minutes)}:${padTo2Digits(seconds)}`;
   }
@@ -388,27 +393,29 @@ export default function Submission() {
 
 
   function removeQuestion(idx) {
-    let filteredQuestions = sentences.filter(sentence => sentence.isQuestion);
-    let questionIndex = sentences.indexOf(filteredQuestions[idx]);
+    let newSentences = [...sentences];
+    let filteredQuestions = newSentences.filter(sentence => sentence.isQuestion);
+    let questionIndex = newSentences.indexOf(filteredQuestions[idx]);
     if (questionIndex !== -1) {
-      sentences[questionIndex].isQuestion = false;
+      newSentences[questionIndex].isQuestion = false;
     }
     labeledQuestions.splice(idx, 1);
     times.splice(idx, 1);
-    setQuestions(sentences.filter(sentence => sentence.isQuestion));
+    setQuestions(newSentences.filter(sentence => sentence.isQuestion));
   }
 
   function selectLabel(index, label) {
-    let newLabeledQuestions = [...labeledQuestions];
-    let questionList = sentences.filter(sentence => sentence.isQuestion);
-    questionList[index].label = label;
+    let newLabeledQuestions = [...questions];
+    console.log("select label index: ",index)
     newLabeledQuestions[index].label = label;
+    console.log("new labeled questions:", newLabeledQuestions);
+    setQuestions(newLabeledQuestions)
     setLabeledQuestions(newLabeledQuestions);
 
-    for (let j = 0; j < questionList.length; j++) {
+    for (let j = 0; j < questions.length; j++) {
       for (let k = 0; k < sentences.length; k++) {
-        if (questionList[j].start == sentences[k].start) {
-          sentences[k].label = questionList[j].label;
+        if (questions[j].start == sentences[k].start) {
+          sentences[k].label = questions[j].label;
         }
       }
     }
@@ -416,9 +423,9 @@ export default function Submission() {
 
   function getAmountOfLabel(label) {
     let amount = 0;
-    if (sentences) {
-      for (let i = 0; i < sentences.length; i++) {
-        if (sentences[i].label == label) {
+    if (labeledQuestions) {
+      for (let i = 0; i < labeledQuestions.length; i++) {
+        if (labeledQuestions[i].label == label) {
           amount++;
         }
       }
@@ -810,32 +817,7 @@ export default function Submission() {
     if (sentences) {
       let doc = new jsPDF("p", "pt", "letter");
 
-      let questionList = sentences.filter(sentence => sentence.isQuestion);
-      let questionArray = new Array();
-      for (let i = 0; i < questionList.length; i++) {
-        questionArray[i] = new Array(convertMsToTime(questionList[i].start), questionList[i].speaker, questionList[i].text, questionList[i].label);
-      }
-  
-      const pageWidth1 = doc.internal.pageSize.getWidth();
-      const pageHeight1 = doc.internal.pageSize.getHeight();
-      const margin = 20;
-  
-      // Add the first page
-      doc.setFontSize(24);
-      doc.setFont("helvetica", "bold");
-      const title1 = "Your File Analysis Report";
-      const titleWidth1 = doc.getStringUnitWidth(title1) * doc.internal.getFontSize() / doc.internal.scaleFactor;
-      const titleX = (pageWidth1 - titleWidth1) / 2;
-      doc.text(title1, titleX, margin * 2);
-      doc.autoTable({
-        head: [["Start Time", "Speaker", "Question", "Category"]],
-        body: questionArray,
-        startY: margin * 4 + 5,
-        theme: "grid",
-      });
 
-      // Add a page break before the charts
-      doc.addPage();
 
 
       // Add the title
@@ -862,10 +844,10 @@ export default function Submission() {
 
       doc.addImage(timeImgData, 'PNG', 20, timeYPos, timeImgWidth, timeImgHeight);
 
-      // Second Chart
+      // Add the second chart to the baseline
       const chartElement = document.getElementById('timeChartContainer');
       const canvas = await html2canvas(chartElement, {
-        scale: 2,
+        scale: 2, // Increase the scale for better quality
         useCORS: true,
       });
       const imgData = canvas.toDataURL('image/png');
@@ -875,16 +857,15 @@ export default function Submission() {
 
       doc.addImage(imgData, 'PNG', 20, yPos, imgWidth, imgHeight);
 
-      // Third Chart
+      // Add the third chart to the baseline
       const barChartElement = document.getElementById('barChartContainer');
       const barCanvas = await html2canvas(barChartElement, {
-        scale: 2,
+        scale: 2, // Increase the scale for better quality
         useCORS: true,
       });
-      // Fourth Chart
       const pieChartElement = document.getElementById('pieChartContainer');
       const pieCanvas = await html2canvas(pieChartElement, {
-        scale: 2,
+        scale: 2, // Increase the scale for better quality
         useCORS: true,
       });
 
@@ -899,6 +880,35 @@ export default function Submission() {
       const chartYPos = yPos - barImgHeight - 30;
       doc.addImage(barImgData, 'PNG', 20, chartYPos, barImgWidth, barImgHeight);
       doc.addImage(pieImgData, 'PNG', doc.internal.pageSize.getWidth() / 2 + 20, chartYPos, pieImgWidth, pieImgHeight);
+
+      let questionList = sentences.filter(sentence => sentence.isQuestion);
+      let questionArray = new Array();
+      for (let i = 0; i < questionList.length; i++) {
+        questionArray[i] = new Array(convertMsToTime(questionList[i].start), questionList[i].speaker, questionList[i].text, questionList[i].label);
+      }
+  
+      const pageWidth1 = doc.internal.pageSize.getWidth();
+      const pageHeight1 = doc.internal.pageSize.getHeight();
+      const margin = 20;
+
+      // Add a page break before the charts
+      doc.addPage();
+  
+      // Add the first page
+      doc.setFontSize(24);
+      doc.setFont("helvetica", "bold");
+      const title1 = "Questions Details";
+      const titleWidth1 = doc.getStringUnitWidth(title1) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+      const titleX = (pageWidth1 - titleWidth1) / 2;
+      doc.text(title1, titleX, margin * 2);
+      doc.autoTable({
+        head: [["Start Time", "Speaker", "Question", "Category"]],
+        body: questionArray,
+        startY: margin * 4 + 5,
+        theme: "grid",
+      });
+
+
 
       doc.save("demo.pdf");
     }
@@ -960,7 +970,8 @@ export default function Submission() {
     }
   };
   const handleAddNewSpeaker = (sentence) => {
-    const newSpeaker = String.fromCharCode(Array.from(new Set(speakers)).length + 65); // Assuming speakers are uppercase letters starting from 'A'
+    const newSpeaker = String.fromCharCode(Array.from(new Set(speakers)).length + 65); 
+    console.log(newSpeaker)// Assuming speakers are uppercase letters starting from 'A'
     handleRelabelSpeaker(sentence, newSpeaker);
     setIsRelabelingSpeaker(false);
     setShow(null);
@@ -1022,18 +1033,24 @@ export default function Submission() {
   return (
     <div>
       <div>
+        {userReportToLoad ? (
+          <div>
+            <h5>Current report: {userReportLocation.substring(userReportLocation.indexOf("/") + 1)}</h5>
+            <button className="btn btn-primary" onClick={(e) => reloadPage(e)}>Upload New Recording</button>
+          </div>
+        ): null}
         {!userReportToLoad ? (
           <div>
             <label className="form-label" htmlFor="customFile">
               <h4>Please upload an audio or video recording for transcription</h4>
-              <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
+              <p>Accepted AUDIO file types: .mp3, .m4a, .aac, .oga, .ogg, .flac, .wav, .wv, .aiff</p>
+              <p>Accepted VIDEO file types: .webm, .MTS, .M2TS, .TS, .mov, .mp2, .mp4, .m4v, .mxf</p>
             </label>
             <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
           </div>
         ) : null}
         {isAudio ? (
           <div>
-            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
             <p>Click "Submit" to begin file analysis</p>
             <audio controls id="audio-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
@@ -1042,6 +1059,7 @@ export default function Submission() {
               <div>
                 <Spinner className="spinner" animation="border" role="status"></Spinner>
                 <p>Analysis in progress...</p>
+                <p>Please do not refresh or exit this screen during this time</p>
               </div>
             ) : null}
           </div>
@@ -1054,11 +1072,11 @@ export default function Submission() {
             <video controls id="video-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </video>
-            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
             {isAnalyzing ? (
               <div>
                 <Spinner className="spinner" animation="border" role="status"></Spinner>
                 <p>Analysis in progress...</p>
+                <p>Please do not refresh or exit this screen during this time</p>
               </div>
             ) : null}
           </div>
@@ -1068,12 +1086,11 @@ export default function Submission() {
         {isNeither ? (
           <div>
             <p>Click "Submit" to begin file analysis</p>
-            <p>Please click SUBMIT to begin analysis</p>
-            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
             {isAnalyzing ? (
               <div>
                 <Spinner className="spinner" animation="border" role="status"></Spinner>
                 <p>Analysis in progress...</p>
+                <p>Please do not refresh or exit this screen during this time</p>
               </div>
             ) : null}
           </div>
@@ -1082,7 +1099,7 @@ export default function Submission() {
         )}
         {!isAnalyzing && !sentences ? (
           <button type="button" className="btn btn-primary" id="submission-main" onClick={() => handleSubmission({ selectedFile })}>
-            Submit
+            Analyze Recording
           </button>
         ) : isAnalyzing ? (
           <button type="button" className="btn btn-primary" id="submission-main" onClick={() => window.location.reload()}>
@@ -1096,64 +1113,60 @@ export default function Submission() {
             <h1>Full Transcript</h1>
             <h4>Click on a sentence to make adjustments to "Questions" list</h4>
             <div className="lead" style={{ backgroundColor: "white" }}>
-              <div>
-                {sentences.map((sentence) => (
-                  <div key={sentence.start} onClick={() => setShow(sentence.start)}>
-                    <Dropdown show={show === sentence.start}>
-                      <CustomToggle onClick={(event) => handleToggle(event)}>
-                        <div className="sentence" style={{ backgroundColor: show === sentence.start ? "#F0F0F0" : "white" }}>
-                          <div className="sentence-transcript">
-                            <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
-                            <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
-                            {editing === sentence.start ? (
-                              <input
-                                className="edit-text"
-                                type="text"
-                                value={sentence.text}
-                                onBlur={handleBlur}
-                                onChange={(event) => handleChangeText(sentence, event)}
-                                onKeyDown={(event) => handleKeyPress(event)}
-                                autoFocus
-                              />
-                            ) : (
-                              <div className="transcript-text">{sentence.text}</div>
-                            )}
+            {sentences.map((sentence) => (
+                <div key={sentence.start} onClick={() => setShow(sentence.start)}>
+                  <Dropdown show={show === sentence.start}>
+                    <CustomToggle onClick={(event) => handleToggle(event)}>
+                      <div className="sentence" style={{ backgroundColor: show === sentence.start ? "#F0F0F0" : "white" }}>
+                        <div className="sentence-transcript">
+                          <div className="transcript-time">{convertMsToTime(sentence.start)}</div>
+                          <div className={`transcript-speaker speaker-${sentence.speaker}`}>Speaker {sentence.speaker}:</div>
+                          {editing === sentence.start ? (
+                            <input
+                              className="edit-text"
+                              type="text"
+                              value={sentence.text}
+                              onBlur={handleBlur}
+                              onChange={(event) => handleChangeText(sentence, event)}
+                              onKeyDown={(event) => handleKeyPress(event)}
+                              autoFocus
+                            />
+                          ) : (
+                            <div className="transcript-text">{sentence.text}</div>
+                          )}
+                        </div>
+                      </div>
+                    </CustomToggle>
+                    <Dropdown.Menu style={{ backgroundColor: "#F0F0F0" }}>
+                      {!isRelabelingSpeaker ? (
+                        <div>
+                          <Dropdown.Item
+                            onClick={(event) => {
+                              handleAddQuestion(sentence, event);
+                              handleToggle(null);
+                            }}
+                          >
+                            Add as a question
+                          </Dropdown.Item>
+                          <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
+                          <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
+                          <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
+                          <Dropdown.Item onClick={() => handleAddNewSentence(sentence)}>Insert sentence after</Dropdown.Item>
+                        </div>
+                      ) : (
+                        <div>
+                          {Array.from(new Set(speakers.sort())).map((speaker) => (
+                            <Dropdown.Item onClick={() => handleItemClick(sentence, speaker)}>{speaker}</Dropdown.Item>
+                          ))}{" "}
+                          <div onClick={() => handleAddNewSpeaker(sentence)}>
+                            <Dropdown.Item>Label as new speaker</Dropdown.Item>
                           </div>
                         </div>
-                      </CustomToggle>
-                      <Dropdown.Menu style={{ backgroundColor: "#F0F0F0" }}>
-                        {!isRelabelingSpeaker ? (
-                          <div>
-                            <Dropdown.Item
-                              onClick={(event) => {
-                                handleAddQuestion(sentence, event);
-                                handleToggle(null);
-                              }}
-                            >
-                              Add as a question
-                            </Dropdown.Item>
-                            <Dropdown.Item onClick={() => setIsRelabelingSpeaker(true)}>Relabel speaker</Dropdown.Item>
-                            <Dropdown.Item onClick={() => setEditing(sentence.start)}>Edit sentence</Dropdown.Item>
-                            <Dropdown.Item onClick={() => removeSentence(sentence)}>Remove sentence</Dropdown.Item>
-                            <Dropdown.Item>Insert sentence after</Dropdown.Item>
-                          </div>
-                        ) : (
-                          <div>
-                            {Array.from(new Set(speakers.sort())).map((speaker) => (
-                              <Dropdown.Item key={speaker} onClick={() => handleItemClick(sentence, speaker)}>
-                                {speaker}
-                              </Dropdown.Item>
-                            ))}
-                            <div onClick={() => handleAddNewSpeaker(sentence)}>
-                              <Dropdown.Item>Label as new speaker</Dropdown.Item>
-                            </div>
-                          </div>
-                        )}
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </div>
-                ))}
-              </div>
+                      )}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </div>
+              ))}
             </div>
           </div>
           <div className="card-deck mb-3 text-center">
@@ -1178,23 +1191,21 @@ export default function Submission() {
                       </tr>
                     </thead>
                     <tbody>
-                      {sentences &&
+                    {sentences &&
                         times &&
                         sentences
-                          .filter(sentence => sentence.isQuestion)
+                          .filter(sentence => sentence.isQuestion === true)
                           .map((question, index) => (
                             <tr key={index} className="question">
                               <td>{times[index]}</td>
-                              <td id="question-table-question" style={{ color: question.label === "Uncategorized" ? "#ff0000" : "#000000" }}>"{question.text}"</td>
+                              <td id="question-table-question" style={{color: question.label === "Uncategorized" ? "#ff0000": "#000000"}}>"{question.text}"</td>
                               <td className={`transcript-speaker speaker-${question.speaker}`}>{question.speaker}</td>
                               <td>
-                                {respTime[question.end] < 1
-                                  ? "< 1 second"
-                                  : respTime[question.end] === "No Response"
-                                    ? "No Response"
-                                    : respTime[question.end] + " seconds"}
+                                {respTime[question.end] < 1 ? "< 1 second" 
+                                : respTime[question.end] === "No Response" ? "No Response" 
+                                : respTime[question.end] + " seconds"}
                               </td>
-                              <td style={{ color: question.label === "Uncategorized" ? "#ff0000" : "#000000" }}>{question.label}</td>
+                              <td style={{color: question.label === "Uncategorized" ? "#ff0000": "#000000"}}>{question.label}</td>
                               <td className="question-options">
                                 <Dropdown>
                                   <Dropdown.Toggle variant="sm" id="dropdown-basic">
@@ -1254,15 +1265,15 @@ export default function Submission() {
                                   Remove
                                 </button>
                               </td>
-                            </tr>
-                          ))}
+                          </tr>
+                        ))}
                     </tbody>
                   </table>
                 </div>
               </div>
             </div>
             <div>
-              <tr>
+            <tr>
                 <td id="barChartContainer">
                   <Chart options={barChartProps.options} series={barChartProps.series} type="bar" width="650" />
                 </td>
@@ -1283,9 +1294,16 @@ export default function Submission() {
               </tr>
             </div>
           </div>
-
+          {!userReportToLoad ? (
+              <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
+            ): null}
+            {badReportName ? (
+              <div className="alert alert-danger">Please name your report before saving!</div>
+            ): null}
           <div>
-            {successfullUpload ? <p>File Save Success</p> : null}
+            {successfullUpload ? (
+              <h6>File Save Success!!!</h6>
+            ): null}
             <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary" id="bottom-button">
               Download PDF
             </button>
