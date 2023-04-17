@@ -146,11 +146,13 @@ export default function Account(){
     }
 
     async function deleteUserReport(key, event){
+        
         event.preventDefault();
         setShow(false)
         const s3 = new AWS.S3();
         const user = await Auth.currentAuthenticatedUser();
-
+        console.log("DELETING REPORT:")
+        console.log(key)
         let params = {
             Bucket: 'c2ai-storage-e5d3ddbc163336-staging',
             Key: key,
@@ -195,7 +197,11 @@ export default function Account(){
                                 listFiles.map((name, index) => (
                                     <li className='list-group-item' key={index}>
                                         <button className="btn btn-primary" onClick={(e) => loadUserReport(name.Key, e)}>{name.Key.substring(name.Key.indexOf("/") + 1)}</button>   
-                                        <button className="btn btn-danger" type="button" onClick={handleShow}>Delete</button>
+                                        {/*<button className="btn btn-danger" type="button" onClick={handleShow}>Delete</button>*/}
+                                        <button variant="primary" className="btn btn-danger" id="delete-button" onClick={(e) => deleteUserReport(name.Key, e)}>
+                                            Delete Report
+                                        </button>
+                                        {/*
                                         <Modal show={show} onHide={handleClose}>
                                         <Modal.Header closeButton>
                                         <Modal.Title>Delete Report</Modal.Title>
@@ -205,11 +211,10 @@ export default function Account(){
                                                 <button variant="secondary" className="btn btn-primary" onClick={handleClose}>
                                                     Close
                                                 </button>
-                                                <button variant="primary" className="btn btn-danger" onClick={(e) => deleteUserReport(name.Key, e)}>
-                                                    Delete Report
-                                                </button>
+
                                             </Modal.Footer>
                                         </Modal>
+                                        */}
                                     </li>         
                             ))}
                             {reportLoaded ? (
