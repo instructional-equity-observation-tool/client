@@ -50,10 +50,6 @@ export default function Submission() {
   const userReportToLoad = location.state?.data;
   const userReportLocation = location.state?.location;
 
-  //refs for chart imgs on pdf
-  const timeLineRef = useRef(null);
-  const timeChartRef = useRef(null);
-
   useEffect(() => {
     checkLoadReport();
   }, []);
@@ -1276,12 +1272,12 @@ export default function Submission() {
               <br></br>
               <tr>
                 <td id="timeChartContainer">
-                  <Chart ref={timeChartRef} options={getTimeChartProps(sentences).options} series={getTimeChartProps(sentences).series} type="rangeBar" height={600} width={1300} />
+                  <Chart options={getTimeChartProps(sentences).options} series={getTimeChartProps(sentences).series} type="rangeBar" height={600} width={1300} />
                 </td>
               </tr>
               <tr>
                 <td id="timeLineContainer">
-                  <Chart ref={timeLineRef} options={timeLineProps.options} series={timeLineProps.series} type="rangeBar" height={200} width={1300} />
+                  <Chart options={timeLineProps.options} series={timeLineProps.series} type="rangeBar" height={200} width={1300} />
                 </td>
               </tr>
             </div>
