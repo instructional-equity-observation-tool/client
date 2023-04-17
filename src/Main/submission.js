@@ -27,7 +27,7 @@ export default function Submission() {
 
   const [times, setTimes] = useState();
   const [speakers, setSpeakers] = useState();
-  console.log('speakers: ', speakers);
+  //console.log('speakers: ', speakers);
   const [questions, setQuestions] = useState();
   const [respTime, setRespTime] = useState();
   const [labeledQuestions, setLabeledQuestions] = useState();
@@ -46,9 +46,9 @@ export default function Submission() {
   const [successfullUpload, setSuccessfullUpload] = useState(false);
   const [badReportName, setBadReportName] = useState(false);
 
-  const[transcriptSpeakers, setTranscriptSpeakers] = useState([]);
+  const [transcriptSpeakers, setTranscriptSpeakers] = useState([]);
 
-  
+
   let navigate = useNavigate();
 
   const location = useLocation();
@@ -129,9 +129,9 @@ export default function Submission() {
       const user = await Auth.currentAuthenticatedUser();
       const folderName = user.username;
       const location = folderName + "/" + reportName;
-      if(reportName === ""){
+      if (reportName === "") {
         setBadReportName(true)
-      }else{
+      } else {
         setBadReportName(false)
         var data = {
           Bucket: "c2ai-storage-e5d3ddbc163336-staging",
@@ -174,11 +174,11 @@ export default function Submission() {
   }
 
   let handleSubmission = async () => {
-      setIsAnalyzing(true);
-      const audioUrl = await uploadFile(fileContent);
-      const transcriptionResult = await transcribeFile(audioUrl);
-      setSentences(transcriptionResult);
-      setIsAnalyzing(false);
+    setIsAnalyzing(true);
+    const audioUrl = await uploadFile(fileContent);
+    const transcriptionResult = await transcribeFile(audioUrl);
+    setSentences(transcriptionResult);
+    setIsAnalyzing(false);
   };
 
   function createTranscript() {
@@ -405,20 +405,30 @@ export default function Submission() {
   }
 
   function selectLabel(index, label) {
+    /*
     let newLabeledQuestions = [...questions];
-    console.log("select label index: ",index)
+    let questionList = sentences.filter(sentence => sentence.isQuestion);
+    //console.log("select label index: ", index)
     newLabeledQuestions[index].label = label;
-    console.log("new labeled questions:", newLabeledQuestions);
+    //console.log("new labeled questions:", newLabeledQuestions);
     setQuestions(newLabeledQuestions)
     setLabeledQuestions(newLabeledQuestions);
 
-    for (let j = 0; j < questions.length; j++) {
+    for (let j = 0; j < questionList.length; j++) {
       for (let k = 0; k < sentences.length; k++) {
-        if (questions[j].start == sentences[k].start) {
-          sentences[k].label = questions[j].label;
+        if (questionList[j].start == sentences[k].start) {
+          sentences[k].label = questionList[j].label;
         }
       }
+    }*/
+
+    let newSentences = [...sentences];
+    let filteredQuestions = newSentences.filter(sentence => sentence.isQuestion);
+    let questionIndex = newSentences.indexOf(filteredQuestions[index]);
+    if (questionIndex !== -1) {
+      newSentences[questionIndex].label = label;
     }
+    setQuestions(sentences.filter(sentence => sentence.isQuestion));
   }
 
   function getAmountOfLabel(label) {
@@ -500,8 +510,8 @@ export default function Submission() {
           timeData.push(entry);
         }
       }
-      console.log("timeData:");
-      console.log(timeData);
+      //console.log("timeData:");
+      //console.log(timeData);
       return timeData;
     }
   }
@@ -599,12 +609,12 @@ export default function Submission() {
             let questionList = sentences.filter(
               (item) => item.isQuestion
             );
-            console.log("copy of sentences: ")
-            console.log(sentences)
+            //console.log("copy of sentences: ")
+            //console.log(sentences)
             let question = questionList[tooltipIndex];
-            console.log("GOT HERE")
-            console.log("data point index: " + tooltipIndex)
-            console.log(questionList)
+            //console.log("GOT HERE")
+            //console.log("data point index: " + tooltipIndex)
+            //console.log(questionList)
             return (
               '<div class="arrow_box">' +
               '<span><strong>Question: </strong>' + question.text + '</span>' +
@@ -886,15 +896,15 @@ export default function Submission() {
       for (let i = 0; i < questionList.length; i++) {
         questionArray[i] = new Array(convertMsToTime(questionList[i].start), questionList[i].speaker, questionList[i].text, questionList[i].label);
       }
-  
+
       const pageWidth1 = doc.internal.pageSize.getWidth();
       const pageHeight1 = doc.internal.pageSize.getHeight();
       const margin = 20;
 
-      // Add a page break before the charts
+      // Add a page break after charts
       doc.addPage();
-  
-      // Add the first page
+
+      // Add question table
       doc.setFontSize(24);
       doc.setFont("helvetica", "bold");
       const title1 = "Questions Details";
@@ -970,7 +980,7 @@ export default function Submission() {
     }
   };
   const handleAddNewSpeaker = (sentence) => {
-    const newSpeaker = String.fromCharCode(Array.from(new Set(speakers)).length + 65); 
+    const newSpeaker = String.fromCharCode(Array.from(new Set(speakers)).length + 65);
     console.log(newSpeaker)// Assuming speakers are uppercase letters starting from 'A'
     handleRelabelSpeaker(sentence, newSpeaker);
     setIsRelabelingSpeaker(false);
@@ -1038,7 +1048,7 @@ export default function Submission() {
             <h5>Current report: {userReportLocation.substring(userReportLocation.indexOf("/") + 1)}</h5>
             <button className="btn btn-primary" onClick={(e) => reloadPage(e)}>Upload New Recording</button>
           </div>
-        ): null}
+        ) : null}
         {!userReportToLoad ? (
           <div>
             <label className="form-label" htmlFor="customFile">
@@ -1113,7 +1123,7 @@ export default function Submission() {
             <h1>Full Transcript</h1>
             <h4>Click on a sentence to make adjustments to "Questions" list</h4>
             <div className="lead" style={{ backgroundColor: "white" }}>
-            {sentences.map((sentence) => (
+              {sentences.map((sentence) => (
                 <div key={sentence.start} onClick={() => setShow(sentence.start)}>
                   <Dropdown show={show === sentence.start}>
                     <CustomToggle onClick={(event) => handleToggle(event)}>
@@ -1191,21 +1201,21 @@ export default function Submission() {
                       </tr>
                     </thead>
                     <tbody>
-                    {sentences &&
+                      {sentences &&
                         times &&
                         sentences
                           .filter(sentence => sentence.isQuestion === true)
                           .map((question, index) => (
                             <tr key={index} className="question">
-                              <td>{times[index]}</td>
-                              <td id="question-table-question" style={{color: question.label === "Uncategorized" ? "#ff0000": "#000000"}}>"{question.text}"</td>
+                              <td>{convertMsToTime(question.start)}</td>
+                              <td id="question-table-question" style={{ color: question.label === "Uncategorized" ? "#ff0000" : "#000000" }}>"{question.text}"</td>
                               <td className={`transcript-speaker speaker-${question.speaker}`}>{question.speaker}</td>
                               <td>
-                                {respTime[question.end] < 1 ? "< 1 second" 
-                                : respTime[question.end] === "No Response" ? "No Response" 
-                                : respTime[question.end] + " seconds"}
+                                {respTime[question.end] < 1 ? "< 1 second"
+                                  : respTime[question.end] === "No Response" ? "No Response"
+                                    : respTime[question.end] + " seconds"}
                               </td>
-                              <td style={{color: question.label === "Uncategorized" ? "#ff0000": "#000000"}}>{question.label}</td>
+                              <td style={{ color: question.label === "Uncategorized" ? "#ff0000" : "#000000" }}>{question.label}</td>
                               <td className="question-options">
                                 <Dropdown>
                                   <Dropdown.Toggle variant="sm" id="dropdown-basic">
@@ -1265,15 +1275,15 @@ export default function Submission() {
                                   Remove
                                 </button>
                               </td>
-                          </tr>
-                        ))}
+                            </tr>
+                          ))}
                     </tbody>
                   </table>
                 </div>
               </div>
             </div>
             <div>
-            <tr>
+              <tr>
                 <td id="barChartContainer">
                   <Chart options={barChartProps.options} series={barChartProps.series} type="bar" width="650" />
                 </td>
@@ -1295,15 +1305,15 @@ export default function Submission() {
             </div>
           </div>
           {!userReportToLoad ? (
-              <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
-            ): null}
-            {badReportName ? (
-              <div className="alert alert-danger">Please name your report before saving!</div>
-            ): null}
+            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
+          ) : null}
+          {badReportName ? (
+            <div className="alert alert-danger">Please name your report before saving!</div>
+          ) : null}
           <div>
             {successfullUpload ? (
               <h6>File Save Success!!!</h6>
-            ): null}
+            ) : null}
             <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary" id="bottom-button">
               Download PDF
             </button>
