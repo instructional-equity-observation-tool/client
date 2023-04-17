@@ -19,6 +19,7 @@ import { Auth } from "aws-amplify";
 import AWS from "aws-sdk";
 import { Buffer } from "buffer";
 import { useLocation, useNavigate } from "react-router-dom";
+import html2canvas from 'html2canvas';
 
 export default function Submission() {
   const [transcript, setTranscript] = useState();
@@ -48,6 +49,10 @@ export default function Submission() {
   const location = useLocation();
   const userReportToLoad = location.state?.data;
   const userReportLocation = location.state?.location;
+
+  //refs for chart imgs on pdf
+  const timeLineRef = useRef(null);
+  const timeChartRef = useRef(null);
 
   useEffect(() => {
     checkLoadReport();
@@ -587,7 +592,7 @@ export default function Submission() {
           enabled: true,
           custom: function ({ seriesIndex, dataPointIndex, w }) {
             //because 6 init entries
-            let tooltipIndex = dataPointIndex-6;
+            let tooltipIndex = dataPointIndex - 6;
             let questionList = sentences.filter(
               (item) => item.isQuestion
             );
@@ -805,24 +810,98 @@ export default function Submission() {
     return speakingTime;
   }
 
-  function generatePDF() {
+  async function generatePDF() {
     if (sentences) {
       let doc = new jsPDF("p", "pt", "letter");
 
       let questionList = sentences.filter(sentence => sentence.isQuestion);
       let questionArray = new Array();
       for (let i = 0; i < questionList.length; i++) {
-        questionArray[i] = new Array(questionList[i].text, questionList[i].label);
+        questionArray[i] = new Array(convertMsToTime(questionList[i].start), questionList[i].speaker, questionList[i].text, questionList[i].label);
       }
-
-      let y = 10;
-      doc.setLineWidth(2);
-      doc.text(200, (y = y + 20), "Your File Analysis Report");
+  
+      const pageWidth1 = doc.internal.pageSize.getWidth();
+      const pageHeight1 = doc.internal.pageSize.getHeight();
+      const margin = 20;
+  
+      // Add the first page
+      doc.setFontSize(24);
+      doc.setFont("helvetica", "bold");
+      const title1 = "Your File Analysis Report";
+      const titleWidth1 = doc.getStringUnitWidth(title1) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+      const titleX = (pageWidth1 - titleWidth1) / 2;
+      doc.text(title1, titleX, margin * 2);
       doc.autoTable({
-        head: [["Question", "Category"]],
+        head: [["Start Time", "Speaker", "Question", "Category"]],
         body: questionArray,
+        startY: margin * 4 + 5,
         theme: "grid",
       });
+
+      // Add a page break before the charts
+      doc.addPage();
+
+
+      // Add the title
+      doc.setFontSize(24);
+      doc.setFont("helvetica", "bold");
+      const title2 = "Analysis Visualizations";
+      const titleWidth2 = doc.getStringUnitWidth(title2) * doc.internal.getFontSize() / doc.internal.scaleFactor;
+      const pageWidth2 = doc.internal.pageSize.getWidth();
+      const titleXX = (pageWidth2 - titleWidth2) / 2;
+      doc.text(title2, titleXX, 50);
+
+      // Add the first chart to the bottom
+      const timeChartElement = document.getElementById('timeLineContainer');
+      const timeCanvas = await html2canvas(timeChartElement, {
+        scale: 2, // Increase the scale for better quality
+        useCORS: true,
+      });
+      const timeImgData = timeCanvas.toDataURL('image/png');
+      const timeImgWidth = doc.internal.pageSize.getWidth() - 40; // 20px margin on both sides
+      const timeImgHeight = (timeCanvas.height * timeImgWidth) / timeCanvas.width;
+
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const timeYPos = pageHeight - timeImgHeight - 30; // 30px margin from the bottom
+
+      doc.addImage(timeImgData, 'PNG', 20, timeYPos, timeImgWidth, timeImgHeight);
+
+      // Add the second chart to the baseline
+      const chartElement = document.getElementById('timeChartContainer');
+      const canvas = await html2canvas(chartElement, {
+        scale: 2, // Increase the scale for better quality
+        useCORS: true,
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const imgWidth = doc.internal.pageSize.getWidth() - 40; // 20px margin on both sides
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const yPos = timeYPos - imgHeight - 30; // 30px margin from the first chart
+
+      doc.addImage(imgData, 'PNG', 20, yPos, imgWidth, imgHeight);
+
+      // Add the third chart to the baseline
+      const barChartElement = document.getElementById('barChartContainer');
+      const barCanvas = await html2canvas(barChartElement, {
+        scale: 2, // Increase the scale for better quality
+        useCORS: true,
+      });
+      const pieChartElement = document.getElementById('pieChartContainer');
+      const pieCanvas = await html2canvas(pieChartElement, {
+        scale: 2, // Increase the scale for better quality
+        useCORS: true,
+      });
+
+      const barImgData = barCanvas.toDataURL('image/png');
+      const barImgWidth = doc.internal.pageSize.getWidth() / 2 - 40; // 20px margin on both sides
+      const barImgHeight = (barCanvas.height * barImgWidth) / barCanvas.width;
+
+      const pieImgData = pieCanvas.toDataURL('image/png');
+      const pieImgWidth = doc.internal.pageSize.getWidth() / 2 - 40; // 20px margin on both sides
+      const pieImgHeight = (pieCanvas.height * pieImgWidth) / pieCanvas.width;
+
+      const chartYPos = yPos - barImgHeight - 30;
+      doc.addImage(barImgData, 'PNG', 20, chartYPos, barImgWidth, barImgHeight);
+      doc.addImage(pieImgData, 'PNG', doc.internal.pageSize.getWidth() / 2 + 20, chartYPos, pieImgWidth, pieImgHeight);
 
       doc.save("demo.pdf");
     }
@@ -1187,22 +1266,22 @@ export default function Submission() {
             </div>
             <div>
               <tr>
-                <td>
+                <td id="barChartContainer">
                   <Chart options={barChartProps.options} series={barChartProps.series} type="bar" width="650" />
                 </td>
-                <td>
+                <td id="pieChartContainer">
                   <Chart options={pieChartProps.options} series={pieChartProps.series} type="pie" width="650" />
                 </td>
               </tr>
               <br></br>
               <tr>
-                <td>
-                  <Chart options={getTimeChartProps(sentences).options} series={getTimeChartProps(sentences).series} type="rangeBar" height={600} width={1300} />
+                <td id="timeChartContainer">
+                  <Chart ref={timeChartRef} options={getTimeChartProps(sentences).options} series={getTimeChartProps(sentences).series} type="rangeBar" height={600} width={1300} />
                 </td>
               </tr>
               <tr>
-                <td>
-                  <Chart options={timeLineProps.options} series={timeLineProps.series} type="rangeBar" height={200} width={1300} />
+                <td id="timeLineContainer">
+                  <Chart ref={timeLineRef} options={timeLineProps.options} series={timeLineProps.series} type="rangeBar" height={200} width={1300} />
                 </td>
               </tr>
             </div>
