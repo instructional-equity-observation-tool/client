@@ -405,23 +405,6 @@ export default function Submission() {
   }
 
   function selectLabel(index, label) {
-    /*
-    let newLabeledQuestions = [...questions];
-    let questionList = sentences.filter(sentence => sentence.isQuestion);
-    //console.log("select label index: ", index)
-    newLabeledQuestions[index].label = label;
-    //console.log("new labeled questions:", newLabeledQuestions);
-    setQuestions(newLabeledQuestions)
-    setLabeledQuestions(newLabeledQuestions);
-
-    for (let j = 0; j < questionList.length; j++) {
-      for (let k = 0; k < sentences.length; k++) {
-        if (questionList[j].start == sentences[k].start) {
-          sentences[k].label = questionList[j].label;
-        }
-      }
-    }*/
-
     let newSentences = [...sentences];
     let filteredQuestions = newSentences.filter(sentence => sentence.isQuestion);
     let questionIndex = newSentences.indexOf(filteredQuestions[index]);
