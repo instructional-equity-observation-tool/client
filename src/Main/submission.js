@@ -862,10 +862,10 @@ export default function Submission() {
 
       doc.addImage(timeImgData, 'PNG', 20, timeYPos, timeImgWidth, timeImgHeight);
 
-      // Add the second chart to the baseline
+      // Second Chart
       const chartElement = document.getElementById('timeChartContainer');
       const canvas = await html2canvas(chartElement, {
-        scale: 2, // Increase the scale for better quality
+        scale: 2,
         useCORS: true,
       });
       const imgData = canvas.toDataURL('image/png');
@@ -875,15 +875,16 @@ export default function Submission() {
 
       doc.addImage(imgData, 'PNG', 20, yPos, imgWidth, imgHeight);
 
-      // Add the third chart to the baseline
+      // Third Chart
       const barChartElement = document.getElementById('barChartContainer');
       const barCanvas = await html2canvas(barChartElement, {
-        scale: 2, // Increase the scale for better quality
+        scale: 2,
         useCORS: true,
       });
+      // Fourth Chart
       const pieChartElement = document.getElementById('pieChartContainer');
       const pieCanvas = await html2canvas(pieChartElement, {
-        scale: 2, // Increase the scale for better quality
+        scale: 2,
         useCORS: true,
       });
 
