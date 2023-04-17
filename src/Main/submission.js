@@ -60,12 +60,14 @@ export default function Submission() {
       findSpeakers();
       toResponse();
       printTimes();
+      getTimeChartProps();
     }
   }, [sentences]);
 
   useEffect(() => {
     if (questions) {
       printTimes();
+      getTimeChartProps();
     }
   }, [questions]);
 
@@ -205,8 +207,6 @@ export default function Submission() {
       return prevSentence;
     });
     setSentences(newSentences);
-
-
   };
 
   function findQuestions() {
@@ -443,19 +443,18 @@ export default function Submission() {
     }
   }
 
+  const labelColors = {
+    Knowledge: "#0000FF",
+    Understand: "#D42AC8",
+    Apply: "#009400",
+    Analyze: "#FF7300",
+    Evaluate: "#FFC400",
+    Create: "#7C7670",
+  };
+
   function setTimeChartData() {
     if (sentences) {
       let timeData = [];
-
-      const labelColors = {
-        Knowledge: "#0000FF",
-        Understand: "#D42AC8",
-        Apply: "#009400",
-        Analyze: "#FF7300",
-        Evaluate: "#FFC400",
-        Create: "#7C7670",
-      };
-
       let questionList = sentences.filter(
         (item) => item.isQuestion && Object.keys(labelColors).includes(item.label)
       );
@@ -474,7 +473,7 @@ export default function Submission() {
       for (let label in labelColors) {
         let initialEntry = {
           x: label,
-          y: [0,0],
+          y: [0, 0],
           fillColor: labelColors[label],
         };
         timeData.push(initialEntry);
@@ -504,14 +503,6 @@ export default function Submission() {
       let timeData = [];
       //console.log("sentences:")
       //console.log(sentences)
-      const labelColors = {
-        Knowledge: "#0000FF",
-        Understand: "#D42AC8",
-        Apply: "#009400",
-        Analyze: "#FF7300",
-        Evaluate: "#FFC400",
-        Create: "#7C7670",
-      };
       let questionList = sentences.filter(
         (item) => item.isQuestion && Object.keys(labelColors).includes(item.label)
       );
@@ -520,7 +511,7 @@ export default function Submission() {
       const minTime = Math.min(...sentences.map((s) => s.start / 1000));
       const maxTime = Math.max(...sentences.map((s) => s.start / 1000));
       const totalTimeRange = maxTime - minTime;
-      const entryWidthPercentage = 0.04; 
+      const entryWidthPercentage = 0.04;
       const constantWidth = totalTimeRange * entryWidthPercentage;
 
       let initialEntry = {
@@ -550,49 +541,72 @@ export default function Submission() {
     }
   }
 
-  const timeChartProps = {
-    series: [
-      {
-        data: setTimeChartData(),
-      },
-    ],
-    options: {
-      chart: {
-        type: "rangeBar",
-      },
-      title: {
-        text: "Teacher Question Timeline",
-        align: "left",
-        style: {
-          fontSize: "30px",
-          fontWeight: "bold",
-          fontFamily: undefined,
-          color: "#263238",
+  function getTimeChartProps() {
+    return {
+      series: [
+        {
+          data: setTimeChartData(),
         },
-      },
-      plotOptions: {
-        bar: {
-          horizontal: true,
+      ],
+      options: {
+        chart: {
+          type: "rangeBar",
         },
-      },
-      xaxis: {
-        type: "numeric",
-        labels: {
-          formatter: function (val) {
-            return convertMsToTime(val);
-          },
-        },
-      },
-      yaxis: {
-        labels: {
+        title: {
+          text: "Teacher Question Timeline",
+          align: "left",
           style: {
-            fontSize: "20px",
+            fontSize: "30px",
+            fontWeight: "bold",
+            fontFamily: undefined,
+            color: "#263238",
           },
         },
-        categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"],
+        plotOptions: {
+          bar: {
+            horizontal: true,
+          },
+        },
+        xaxis: {
+          type: "numeric",
+          labels: {
+            formatter: function (val) {
+              return convertMsToTime(val);
+            },
+          },
+        },
+        yaxis: {
+          labels: {
+            style: {
+              fontSize: "20px",
+            },
+          },
+          categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create"],
+        },
+        tooltip: {
+          enabled: true,
+          custom: function ({ seriesIndex, dataPointIndex, w }) {
+            //because 6 init entries
+            let tooltipIndex = dataPointIndex-6;
+            let questionList = sentences.filter(
+              (item) => item.isQuestion
+            );
+            console.log("copy of sentences: ")
+            console.log(sentences)
+            let question = questionList[tooltipIndex];
+            console.log("GOT HERE")
+            console.log("data point index: " + tooltipIndex)
+            console.log(questionList)
+            return (
+              '<div class="arrow_box">' +
+              '<span><strong>Question: </strong>' + question.text + '</span>' +
+              '</div>'
+            );
+          },
+        },
       },
-    },
-  };
+    };
+  }
 
   const timeLineProps = {
     series: [
@@ -643,7 +657,7 @@ export default function Submission() {
         type: "numeric",
         labels: {
           formatter: function (val) {
-            return convertMsToTime(val*1000);
+            return convertMsToTime(val * 1000);
           },
         },
       },
@@ -751,10 +765,23 @@ export default function Submission() {
       },
       dataLabels: {
         enabled: true,
+        formatter: function (val, opts) {
+          const label = opts.w.config.labels[opts.seriesIndex];
+          return `${label}: ${val.toFixed(1)}%`;
+        },
         style: {
-          fontSize: "28px",
+          fontSize: "18px",
           fontFamily: "Helvetica, Arial, sans-serif",
           fontWeight: "bold",
+        },
+      },
+      tooltip: {
+        enabled: true,
+        y: {
+          formatter: function (value, { series, seriesIndex, dataPointIndex, w }) {
+            const ms = value;
+            return convertMsToTime(ms);
+          },
         },
       },
       labels: ["Teacher", "Students", "Non-Speaking"],
@@ -1082,7 +1109,7 @@ export default function Submission() {
                           .map((question, index) => (
                             <tr key={index} className="question">
                               <td>{times[index]}</td>
-                              <td id="question-table-question" style={{color: question.label === "Uncategorized" ? "#ff0000": "#000000"}}>"{question.text}"</td>
+                              <td id="question-table-question" style={{ color: question.label === "Uncategorized" ? "#ff0000" : "#000000" }}>"{question.text}"</td>
                               <td className={`transcript-speaker speaker-${question.speaker}`}>{question.speaker}</td>
                               <td>
                                 {respTime[question.end] < 1
@@ -1091,7 +1118,7 @@ export default function Submission() {
                                     ? "No Response"
                                     : respTime[question.end] + " seconds"}
                               </td>
-                              <td style={{color: question.label === "Uncategorized" ? "#ff0000": "#000000"}}>{question.label}</td>
+                              <td style={{ color: question.label === "Uncategorized" ? "#ff0000" : "#000000" }}>{question.label}</td>
                               <td className="question-options">
                                 <Dropdown>
                                   <Dropdown.Toggle variant="sm" id="dropdown-basic">
@@ -1170,7 +1197,7 @@ export default function Submission() {
               <br></br>
               <tr>
                 <td>
-                  <Chart options={timeChartProps.options} series={timeChartProps.series} type="rangeBar" height={600} width={1300} />
+                  <Chart options={getTimeChartProps(sentences).options} series={getTimeChartProps(sentences).series} type="rangeBar" height={600} width={1300} />
                 </td>
               </tr>
               <tr>

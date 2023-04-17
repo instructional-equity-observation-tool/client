@@ -7,6 +7,7 @@ import {Buffer} from "buffer";
 import Submission from "../Main/submission";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { Modal } from "react-bootstrap";
 
 export default function Account(){
     const[isEditing, setIsEditing] = useState(false);
@@ -16,6 +17,7 @@ export default function Account(){
     const [listFiles, setListFiles] = useState([]);
     const [filename, setFilename] = useState();
     const[location, setLocation] = useState();
+    const [show, setShow] = useState(false)
     const [userObj, setUserObj] = useState({
         name: '',
         username: '',
@@ -144,7 +146,8 @@ export default function Account(){
     }
 
     async function deleteUserReport(key, event){
-        // event.preventDefault();
+        event.preventDefault();
+        setShow(false)
         const s3 = new AWS.S3();
         const user = await Auth.currentAuthenticatedUser();
 
@@ -157,11 +160,14 @@ export default function Account(){
             if(err){
                 console.log(err)
             }else{
-                window.location.reload();
+                window.location.reload()
                 console.log(data)
             }
         })
     }
+
+    const handleClose = () => setShow(false);
+    const handleShow = () => setShow(true);
 
     return(
         <div className="container">
@@ -181,21 +187,39 @@ export default function Account(){
                                 </div>
                             </div>
                         </div>
+                        
                         <div className="card mt-2">
                             <h4>My Reports</h4>
                             <ul className="list-group">
                             {listFiles && 
                                 listFiles.map((name, index) => (
                                     <li className='list-group-item' key={index}>
-                                        <button className="btn btn-primary" onClick={(e) => loadUserReport(name.Key, e)}>{name.Key.substring(name.Key.indexOf("/") + 1)}</button> 
-                                        <button className="btn btn-danger" onClick={(e) => deleteUserReport(name.Key, e)}>Delete</button>  
+                                        <button className="btn btn-primary" onClick={(e) => loadUserReport(name.Key, e)}>{name.Key.substring(name.Key.indexOf("/") + 1)}</button>   
+                                        <button className="btn btn-danger" type="button" onClick={handleShow}>Delete</button>
+                                        <Modal show={show} onHide={handleClose}>
+                                        <Modal.Header closeButton>
+                                        <Modal.Title>Delete Report</Modal.Title>
+                                        </Modal.Header>
+                                        <Modal.Body>Are you sure you would like to delete this report?</Modal.Body>
+                                            <Modal.Footer>
+                                                <button variant="secondary" className="btn btn-primary" onClick={handleClose}>
+                                                    Close
+                                                </button>
+                                                <button variant="primary" className="btn btn-danger" onClick={(e) => deleteUserReport(name.Key, e)}>
+                                                    Delete Report
+                                                </button>
+                                            </Modal.Footer>
+                                        </Modal>
                                     </li>         
                             ))}
                             {reportLoaded ? (
-                                <Link to="/home" state={{
+                                <div>
+                                    <Link to="/home" state={{
                                     data: report,
                                     location: location,
                                 }} className="btn btn-success">LOAD REPORT</Link>
+                                </div>
+                                
                             ) : null}
                             </ul>
                         </div>
