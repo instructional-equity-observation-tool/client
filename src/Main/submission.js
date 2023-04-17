@@ -26,7 +26,7 @@ export default function Submission() {
 
   const [times, setTimes] = useState();
   const [speakers, setSpeakers] = useState();
-
+  console.log('speakers: ', speakers);
   const [questions, setQuestions] = useState();
   const [respTime, setRespTime] = useState();
   const [labeledQuestions, setLabeledQuestions] = useState();
@@ -43,6 +43,11 @@ export default function Submission() {
   const [isRelabelingSpeaker, setIsRelabelingSpeaker] = useState(false);
   const [editing, setEditing] = useState(false);
   const [successfullUpload, setSuccessfullUpload] = useState(false);
+  const [badReportName, setBadReportName] = useState(false);
+
+  const[transcriptSpeakers, setTranscriptSpeakers] = useState([]);
+
+  
   let navigate = useNavigate();
 
   const location = useLocation();
@@ -121,20 +126,25 @@ export default function Submission() {
       const user = await Auth.currentAuthenticatedUser();
       const folderName = user.username;
       const location = folderName + "/" + reportName;
-      var data = {
-        Bucket: "user-analysis-objs183943-staging",
-        Key: location,
-        Body: JSON.stringify(sentences),
-        ContentEncoding: "base64",
-        ContentType: "application/json",
-        ACL: "public-read",
-      };
-      s3.putObject(data, function (err, data) {
-        if (err) {
-        } else {
-          setSuccessfullUpload(true);
-        }
-      });
+      if(reportName === ""){
+        setBadReportName(true)
+      }else{
+        setBadReportName(false)
+        var data = {
+          Bucket: "user-analysis-objs183943-staging",
+          Key: location,
+          Body: JSON.stringify(sentences),
+          ContentEncoding: "base64",
+          ContentType: "application/json",
+          ACL: "public-read",
+        };
+        s3.putObject(data, function (err, data) {
+          if (err) {
+          } else {
+            setSuccessfullUpload(true);
+          }
+        });
+      }
     }
   }
 
@@ -279,7 +289,6 @@ export default function Submission() {
       }
       setQuestioningTime(convertMsToTime(qDur));
       setTimes(sStamps);
-
       setSpeakers(speaks);
       return sStamps;
     }
@@ -836,7 +845,8 @@ export default function Submission() {
     }
   };
   const handleAddNewSpeaker = (sentence) => {
-    const newSpeaker = String.fromCharCode(Array.from(new Set(speakers)).length + 65); // Assuming speakers are uppercase letters starting from 'A'
+    const newSpeaker = String.fromCharCode(Array.from(new Set(speakers)).length + 65); 
+    console.log(newSpeaker)// Assuming speakers are uppercase letters starting from 'A'
     handleRelabelSpeaker(sentence, newSpeaker);
     setIsRelabelingSpeaker(false);
     setShow(null);
@@ -899,20 +909,23 @@ export default function Submission() {
     <div>
       <div>
         {userReportToLoad ? (
-          <button className="btn btn-primary" onClick={(e) => reloadPage(e)}>Upload New Recording</button>
+          <div>
+            <h5>Current report: {userReportLocation.substring(userReportLocation.indexOf("/") + 1)}</h5>
+            <button className="btn btn-primary" onClick={(e) => reloadPage(e)}>Upload New Recording</button>
+          </div>
         ): null}
         {!userReportToLoad ? (
           <div>
             <label className="form-label" htmlFor="customFile">
               <h4>Please upload an audio or video recording for transcription</h4>
-              <p>Accepted file types: .mp3, .mp4, .ogg, .mts, etc.</p>
+              <p>Accepted AUDIO file types: .mp3, .m4a, .aac, .oga, .ogg, .flac, .wav, .wv, .aiff</p>
+              <p>Accepted VIDEO file types: .webm, .MTS, .M2TS, .TS, .mov, .mp2, .mp4, .m4v, .mxf</p>
             </label>
             <input type="file" className="form-control" id="customFile" onChange={handleFileChange} />
           </div>
         ) : null}
         {isAudio ? (
           <div>
-            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
             <p>Click "Submit" to begin file analysis</p>
             <audio controls id="audio-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
@@ -921,6 +934,7 @@ export default function Submission() {
               <div>
                 <Spinner className="spinner" animation="border" role="status"></Spinner>
                 <p>Analysis in progress...</p>
+                <p>Please do not refresh or exit this screen during this time</p>
               </div>
             ) : null}
           </div>
@@ -933,11 +947,11 @@ export default function Submission() {
             <video controls id="video-player">
               <source src={URL.createObjectURL(selectedFile)} type={selectedFile.type} />
             </video>
-            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
             {isAnalyzing ? (
               <div>
                 <Spinner className="spinner" animation="border" role="status"></Spinner>
                 <p>Analysis in progress...</p>
+                <p>Please do not refresh or exit this screen during this time</p>
               </div>
             ) : null}
           </div>
@@ -947,12 +961,11 @@ export default function Submission() {
         {isNeither ? (
           <div>
             <p>Click "Submit" to begin file analysis</p>
-            <p>Please click SUBMIT to begin analysis</p>
-            <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
             {isAnalyzing ? (
               <div>
                 <Spinner className="spinner" animation="border" role="status"></Spinner>
                 <p>Analysis in progress...</p>
+                <p>Please do not refresh or exit this screen during this time</p>
               </div>
             ) : null}
           </div>
@@ -961,7 +974,7 @@ export default function Submission() {
         )}
         {!isAnalyzing && !sentences ? (
           <button type="button" className="btn btn-primary" id="submission-main" onClick={() => handleSubmission({ selectedFile })}>
-            Submit
+            Analyze Recording
           </button>
         ) : isAnalyzing ? (
           <button type="button" className="btn btn-primary" id="submission-main" onClick={() => window.location.reload()}>
@@ -1156,10 +1169,15 @@ export default function Submission() {
               </tr>
             </div>
           </div>
-
+          {!userReportToLoad ? (
+              <input placeholder="Name this report" onChange={handleInputChange} id="name-report"></input>
+            ): null}
+            {badReportName ? (
+              <div className="alert alert-danger">Please name your report before saving!</div>
+            ): null}
           <div>
             {successfullUpload ? (
-              <p>File Save Success</p>
+              <h6>File Save Success!!!</h6>
             ): null}
             <button class="btn btn-primary" onClick={() => generatePDF(transcript, sentences, questions)} type="primary" id="bottom-button">
               Download PDF
