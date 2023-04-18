@@ -63,10 +63,12 @@
   display: block;
 }
 
-/* .card-body {
+
+#table{
+  overflow-y:scroll;
   height: 400px;
-  overflow-y: scroll;
-} */
+  display:block;
+}
 
 .question-options {
   display: flex;
@@ -88,8 +90,6 @@
 #name-report{
   margin-top: 10px;
 }
-
-
 
 .uncategorized-question {
   color: red;
