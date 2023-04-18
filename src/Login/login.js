@@ -9,6 +9,7 @@ import signOut from '../SignOut/signOut'
 
 const LogIn = () => {
     let navigate = useNavigate();
+    const [badSignIn, setBadSignIn]  = useState(false);
     const [user, setUser] = useState({
         username: '',
         password: ''
@@ -26,23 +27,13 @@ const LogIn = () => {
         try{
             const test = await Auth.signIn({username: user.username, password: user.password});
             console.log(test);
+            setBadSignIn(false);
             navigate("/home")
         }catch(error){
+            setBadSignIn(true);
             console.log(error)
         }
     }
-
-    // async function checkUser(event){
-    //     event.preventDefault();
-    //     try{
-    //         const test = await Auth.currentAuthenticatedUser();
-    //         console.log(test)
-    //     }catch(error){
-    //         console.log(error)
-    //     }
-        
-    // }
-
 
     return (
         <div className='container'>
@@ -71,7 +62,9 @@ const LogIn = () => {
                     value={user.password}
                     onChange={(e) => handleInputChange(e, 'password')}/>
                 </div>
-                <small id="emailHelp" className="form-text text-muted">We'll never share your password with anyone else.</small>
+                {badSignIn ? (
+                    <div className='alert alert-danger' id='password-alert'>Username or password is incorrect</div>
+                ): null}
             </div>
             <button 
             className="btn btn-primary" 
