@@ -45,6 +45,7 @@ export default function Submission() {
   const [editing, setEditing] = useState(false);
   const [successfullUpload, setSuccessfullUpload] = useState(false);
   const [badReportName, setBadReportName] = useState(false);
+  const [teacher, setTeacher] = useState();
 
   const [transcriptSpeakers, setTranscriptSpeakers] = useState([]);
 
@@ -188,6 +189,7 @@ export default function Submission() {
         transcript += " " + sentences[i].text;
       }
       setTranscript(transcript);
+      setTeacher(getMaxSpeaker());
     }
   }
 
@@ -1028,8 +1030,8 @@ export default function Submission() {
       <div>
         {userReportToLoad ? (
           <div>
-            <h5>Current report: {userReportLocation.substring(userReportLocation.indexOf("/") + 1)}</h5>
-            <button className="btn btn-primary" onClick={(e) => reloadPage(e)}>Upload New Recording</button>
+            <h5>Currently Viewing:</h5>
+            <h5>{userReportLocation.substring(userReportLocation.indexOf("/") + 1)}</h5>
           </div>
         ) : null}
         {!userReportToLoad ? (
@@ -1162,6 +1164,10 @@ export default function Submission() {
               ))}
             </div>
           </div>
+          <div className="alert alert-secondary">
+            <h5>From our analysis, <bold className={`transcript-speaker speaker-${teacher}`}> Speaker {teacher}</bold> is the Teacher and <u>all other speakers are Students</u>.</h5>
+            <p>If this is not the case, please relabel the speakers in the "Full Transcript" box above to update this information.</p>
+            </div>
           <div className="card-deck mb-3 text-center">
             <div className="card mb-4 box-shadow">
               <div className="card-header">
@@ -1171,7 +1177,7 @@ export default function Submission() {
                 <h5>Number of Questions: {questions && questions.length}</h5>
                 <h5>Total Questioning Time: {questioningTime}</h5>
               </div>
-              <div className="card-body">
+              <div className="card-body" id="table">
                 <div className="container">
                   <table className="table">
                     <thead>
@@ -1303,6 +1309,7 @@ export default function Submission() {
             <button onClick={() => saveUserObject()} className='btn btn-primary' id="bottom-button2">
               SAVE REPORT
             </button>
+            <button className="btn btn-primary" onClick={(e) => reloadPage(e)} id="bottom-button2">Upload New Recording</button>
           </div>
         </div>
       )}
