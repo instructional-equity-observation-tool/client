@@ -29,3 +29,8 @@ hr{
     margin-left: auto !important;
     margin-right: auto !important; 
 }
+
+
+#password-alert{
+    margin-top: 30px;
+}
