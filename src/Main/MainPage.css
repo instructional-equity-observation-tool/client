@@ -63,10 +63,15 @@
   display: block;
 }
 
-
 #table{
   overflow-y:scroll;
   height: 500px;
+  display:block;
+}
+
+#table{
+  overflow-y:scroll;
+  height: 400px;
   display:block;
 }
 
