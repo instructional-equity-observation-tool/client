@@ -544,7 +544,7 @@ export default function Submission() {
     }
   }
 
-  function getTimeChartProps() {
+  function getTimeChartProps(sentences) {
     return {
       series: [
         {
@@ -602,7 +602,8 @@ export default function Submission() {
             //console.log(questionList)
             return (
               '<div class="arrow_box">' +
-              '<span><strong>Question: </strong>' + question.text + '</span>' +
+              '<span><strong>Speaker ' + question.speaker + ': </strong>' + question.text + '</span><br>' +
+              '<span>' + convertMsToTime(question.start) + '-' + convertMsToTime(question.end) + '</span>' +
               '</div>'
             );
           },
@@ -611,69 +612,81 @@ export default function Submission() {
     };
   }
 
-  const timeLineProps = {
-    series: [
-      {
-        data: setTimeLineData(),
-        name: 'Questions',
-      },
-    ],
-    options: {
-      chart: {
-        type: "rangeBar",
-      },
-      title: {
-        text: "Collapsed Timeline",
-        align: "left",
-        style: {
-          fontSize: "30px",
-          fontWeight: "bold",
-          fontFamily: undefined,
-          color: "#263238",
+  function getTimeLineProps(sentences) {
+    return {
+      series: [
+        {
+          data: setTimeLineData(),
+          name: 'Questions',
         },
-      },
-      plotOptions: {
-        bar: {
-          horizontal: true,
-          distributed: true,
-          dataLabels: {
-            hideOverflowingLabels: false,
-          },
+      ],
+      options: {
+        chart: {
+          type: "rangeBar",
         },
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      /*
-      tooltip: {
-        enabled: true,
-        custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-          let question = sentences.filter(sentence => sentence.isQuestion)[dataPointIndex];
-          return (
-            '<div class="arrow_box">' +
-            '<span><strong>Question: </strong>' + question.text + '</span>' +
-            '</div>'
-          );
-        },
-      },*/
-      xaxis: {
-        type: "numeric",
-        labels: {
-          formatter: function (val) {
-            return convertMsToTime(val * 1000);
-          },
-        },
-      },
-      yaxis: {
-        labels: {
+        title: {
+          text: "Collapsed Timeline",
+          align: "left",
           style: {
-            fontSize: "20px",
+            fontSize: "30px",
+            fontWeight: "bold",
+            fontFamily: undefined,
+            color: "#263238",
           },
         },
-        categories: ["Questions"],
+        plotOptions: {
+          bar: {
+            horizontal: true,
+            distributed: true,
+            dataLabels: {
+              hideOverflowingLabels: false,
+            },
+          },
+        },
+        dataLabels: {
+          enabled: false,
+        },
+        tooltip: {
+          enabled: true,
+          custom: function ({ seriesIndex, dataPointIndex, w }) {
+            //because 6 init entries
+            let tooltipIndex = dataPointIndex - 1;
+            let questionList = sentences.filter(
+              (item) => item.isQuestion
+            );
+            //console.log("copy of sentences: ")
+            //console.log(sentences)
+            let question = questionList[tooltipIndex];
+            //console.log("GOT HERE")
+            //console.log("data point index: " + tooltipIndex)
+            //console.log(questionList)
+            return (
+              '<div class="arrow_box">' +
+              '<span><strong>Speaker ' + question.speaker + ': </strong>' + question.text + '</span><br>' + 
+              '<span>' + convertMsToTime(question.start) + '-' + convertMsToTime(question.end) + '</span>' +
+              '</div>'
+            );
+          },
+        },
+        xaxis: {
+          type: "numeric",
+          labels: {
+            formatter: function (val) {
+              return convertMsToTime(val * 1000);
+            },
+          },
+        },
+        yaxis: {
+          labels: {
+            style: {
+              fontSize: "20px",
+            },
+          },
+          categories: ["Questions"],
+        },
       },
-    },
-  };
+    };
+  }
 
   const barChartProps = {
     options: {
@@ -702,6 +715,9 @@ export default function Submission() {
           },
         },
         categories: ["Knowledge", "Understand", "Apply", "Analyze", "Evaluate", "Create", "Uncategorized"],
+      },
+      tooltip: {
+        enabled: false, // Disable the tooltip on mouseover
       },
     },
     series: [
@@ -1167,7 +1183,7 @@ export default function Submission() {
           <div className="alert alert-secondary">
             <h5>From our analysis, <bold className={`transcript-speaker speaker-${teacher}`}> Speaker {teacher}</bold> is the Teacher and <u>all other speakers are Students</u>.</h5>
             <p>If this is not the case, please relabel the speakers in the "Full Transcript" box above to update this information.</p>
-            </div>
+          </div>
           <div className="card-deck mb-3 text-center">
             <div className="card mb-4 box-shadow">
               <div className="card-header">
@@ -1272,11 +1288,11 @@ export default function Submission() {
               </div>
             </div>
             <div>
-              <tr>
-                <td id="barChartContainer">
+              <tr id="barPieChartContainer">
+                <td >
                   <Chart options={barChartProps.options} series={barChartProps.series} type="bar" width="650" />
                 </td>
-                <td id="pieChartContainer">
+                <td>
                   <Chart options={pieChartProps.options} series={pieChartProps.series} type="pie" width="650" />
                 </td>
               </tr>
@@ -1286,9 +1302,10 @@ export default function Submission() {
                   <Chart options={getTimeChartProps(sentences).options} series={getTimeChartProps(sentences).series} type="rangeBar" height={600} width={1300} />
                 </td>
               </tr>
+              <br></br>
               <tr>
                 <td id="timeLineContainer">
-                  <Chart options={timeLineProps.options} series={timeLineProps.series} type="rangeBar" height={200} width={1300} />
+                  <Chart options={getTimeLineProps(sentences).options} series={getTimeLineProps(sentences).series} type="rangeBar" height={200} width={1300} />
                 </td>
               </tr>
             </div>
