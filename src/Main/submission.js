@@ -1289,10 +1289,10 @@ export default function Submission() {
             </div>
             <div>
               <tr id="barPieChartContainer">
-                <td >
+                <td id="barChartContainer">
                   <Chart options={barChartProps.options} series={barChartProps.series} type="bar" width="650" />
                 </td>
-                <td>
+                <td id="pieChartContainer">
                   <Chart options={pieChartProps.options} series={pieChartProps.series} type="pie" width="650" />
                 </td>
               </tr>
